@@ -3,21 +3,10 @@ package clickhouse
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/ClickHouse/clickhouse-go"
 	"log"
 	"time"
 )
 
-func Connect(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("clickhouse", dsn)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-	return db, nil
-}
 func WaitForClickHouse(dsn string, maxRetries int, delay time.Duration) (*sql.DB, error) {
 	var db *sql.DB
 	var err error

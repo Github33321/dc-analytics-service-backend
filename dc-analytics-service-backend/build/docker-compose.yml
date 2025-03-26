@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: ./build/Dockerfile  # <-- Явно указываем путь
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - LOG_LEVEL=INFO
+      - CLICKHOUSE_DSN=tcp://clickhouse:9000?debug=true
+    depends_on:
+      - clickhouse
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    environment:
+      - CLICKHOUSE_SKIP_USER_SETUP=1
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
