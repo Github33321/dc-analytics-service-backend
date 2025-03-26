@@ -1,37 +1,42 @@
 package main
 
 import (
-	"log"
-	"net/http"
 	"time"
 
 	"dc-analytics-service-backend/internal/config"
 	"dc-analytics-service-backend/internal/handler"
 	"dc-analytics-service-backend/pkg/clickhouse"
 	"dc-analytics-service-backend/pkg/logger"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-
-	cfg, err := config.LoadConfig()
+	cfg, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
+		panic("Ошибка загрузки конфигурации: " + err.Error())
 	}
 
-	logg := logger.InitLogger(cfg.LogLevel)
-	logg.Infof("Логгер инициализирован с уровнем %s", cfg.LogLevel)
+	logg, err := logger.NewLogger(cfg.LogLevel)
+	if err != nil {
+		panic("Ошибка инициализации логгера: " + err.Error())
+	}
+	defer logg.Sync()
+
+	logg.Sugar().Infof("Логгер инициализирован с уровнем %s", cfg.LogLevel)
 
 	chConn, err := clickhouse.WaitForClickHouse(cfg.ClickHouseDSN, 10, 5*time.Second)
 	if err != nil {
-		logg.Fatalf("Ошибка подключения к ClickHouse: %v", err)
+		logg.Sugar().Fatalf("Ошибка подключения к ClickHouse: %v", err)
 	}
 	defer chConn.Close()
-	logg.Infof("Подключение к ClickHouse установлено")
+	logg.Sugar().Info("Подключение к ClickHouse установлено")
 
-	http.HandleFunc("/ping", handler.PingHandler)
+	router := gin.Default()
+	router.GET("/ping", handler.PingHandler)
 
-	logg.Infof("Запуск сервера на порту %s", cfg.Port)
-	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
-		logg.Fatalf("Ошибка сервера: %v", err)
+	logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
+	if err := router.Run(":" + cfg.Port); err != nil {
+		logg.Sugar().Fatalf("Ошибка сервера: %v", err)
 	}
 }

@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: ./build/Dockerfile  # <-- Явно указываем путь
     ports:
       - "8081:8081"
     environment:

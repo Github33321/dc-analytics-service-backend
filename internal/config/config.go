@@ -8,8 +8,7 @@ type Config struct {
 	ClickHouseDSN string
 }
 
-func LoadConfig() (*Config, error) {
-
+func NewConfig() (*Config, error) {
 	return &Config{
 		Port:          getEnv("PORT", "8081"),
 		LogLevel:      getEnv("LOG_LEVEL", "INFO"),
