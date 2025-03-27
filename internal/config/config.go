@@ -1,11 +1,14 @@
 package config
 
-import "os"
+import (
+	"os"
+)
 
 type Config struct {
 	Port          string
 	LogLevel      string
 	ClickHouseDSN string
+	JWTSecret     string
 }
 
 func NewConfig() (*Config, error) {
@@ -13,7 +16,9 @@ func NewConfig() (*Config, error) {
 		Port:          getEnv("PORT", "8081"),
 		LogLevel:      getEnv("LOG_LEVEL", "INFO"),
 		ClickHouseDSN: getEnv("CLICKHOUSE_DSN", "tcp://localhost:9000?debug=true"),
+		JWTSecret:     getEnv("JWT_SECRET", "default_super_secret"),
 	}, nil
+
 }
 
 func getEnv(key, defaultVal string) string {
