@@ -2,9 +2,10 @@ package handler
 
 import (
 	"database/sql"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type DeviceCloudWebhook struct {
@@ -55,7 +56,7 @@ func SelectHandler(c *gin.Context) {
 			_id,
 			created_at,
 			updated_at,
-			MessageId,
+			toString(MessageId) as MessageId,
 			from_num,
 			originating_carrier,
 			created_at_str,
@@ -77,13 +78,13 @@ func SelectHandler(c *gin.Context) {
 			display_cnam,
 			hiya,
 			incoming_number,
-			incoming_number_match,
+			toInt8(incoming_number_match) as incoming_number_match,
 			log_cnam,
 			ocr_cloud_id,
 			screenshot,
-			spam,
+			toInt8(spam) as spam,
 			text,
-			text_recognized,
+			toInt8(text_recognized) as text_recognized,
 			to_num
 		FROM device_cloud_webhooks
 		LIMIT 10
@@ -91,15 +92,18 @@ func SelectHandler(c *gin.Context) {
 
 	rows, err := db.Query(query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка запроса: " + err.Error()})
 		return
 	}
 	defer rows.Close()
 
 	var results []DeviceCloudWebhook
-
 	for rows.Next() {
 		var webhook DeviceCloudWebhook
+		var incomingNumberMatch uint8
+		var spam uint8
+		var textRecognized uint8
+
 		err := rows.Scan(
 			&webhook.ID,
 			&webhook.CreatedAt,
@@ -126,24 +130,28 @@ func SelectHandler(c *gin.Context) {
 			&webhook.DisplayCnam,
 			&webhook.Hiya,
 			&webhook.IncomingNumber,
-			&webhook.IncomingNumberMatch,
+			&incomingNumberMatch,
 			&webhook.LogCnam,
 			&webhook.OcrCloudID,
 			&webhook.Screenshot,
-			&webhook.Spam,
+			&spam,
 			&webhook.Text,
-			&webhook.TextRecognized,
+			&textRecognized,
 			&webhook.ToNum,
 		)
 		if err != nil {
-			log.Printf("Ошибка при чтении строки: %v", err)
+			log.Printf("Ошибка при сканировании строки: %v", err)
 			continue
 		}
+		webhook.IncomingNumberMatch = incomingNumberMatch == 1
+		webhook.Spam = spam == 1
+		webhook.TextRecognized = textRecognized == 1
+
 		results = append(results, webhook)
 	}
 
 	if err = rows.Err(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка после итерации: " + err.Error()})
 		return
 	}
 

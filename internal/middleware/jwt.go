@@ -30,19 +30,16 @@ func JWTMiddleware(secretKey string) gin.HandlerFunc {
 			}
 			return []byte(secretKey), nil
 		})
-
 		if err != nil {
 			fmt.Println("Ошибка при разборе токена:", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
-
 		if !token.Valid {
 			fmt.Println("Токен недействителен")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
-
 		fmt.Println("Токен валидный, доступ разрешён")
 		c.Next()
 	}

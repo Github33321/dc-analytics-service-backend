@@ -44,15 +44,18 @@ func main() {
 	router := gin.Default()
 	router.GET("/ping", handler.PingHandler)
 
-	secure := router.Group("/secure")
+	secure := router.Group("/v1")
 	secure.Use(middleware.JWTMiddleware(cfg.JWTSecret))
-	secure.GET("", handler.SecureHandler)
+	{
+		secure.GET("/analytics/devices/calls", handler.SpamStatsHandler)
+	}
 
 	deviceCloudWebhooks := router.GET("/deviceCloudWebhooks", handler.SelectHandler)
 	deviceCloudWebhooks.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	deviceCloudWebhooks.GET("", handler.SecureHandler)
 
 	logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
+
 	if err := router.Run(":" + cfg.Port); err != nil {
 		logg.Sugar().Fatalf("Ошибка сервера: %v", err)
 	}

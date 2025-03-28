@@ -1,6 +1,7 @@
 ### GET request to example server
 GET http://localhost:8081/secure
-Authorization: Bearer xxx
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmcm9udGVuZC11c2VyIiwiZXhwIjoxNzQzMjU2NDI4LCJpYXQiOjE3NDMxNzAwMjh9.nBOe_a38FtB34JbeLVEtuxD8-owufz4XYklelY4NdbE
+
 
 
 
