@@ -44,12 +44,6 @@ func main() {
 	router := gin.Default()
 	router.GET("/ping", handler.PingHandler)
 
-	secure := router.Group("/v1")
-	secure.Use(middleware.JWTMiddleware(cfg.JWTSecret))
-	{
-		secure.GET("/analytics/devices/calls", handler.SpamStatsHandler)
-	}
-
 	deviceCloudWebhooks := router.GET("/deviceCloudWebhooks", handler.SelectHandler)
 	deviceCloudWebhooks.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	deviceCloudWebhooks.GET("", handler.SecureHandler)

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DeviceCloudWebhook struct {
+type DeviceCloudResult struct {
 	ID                  string `json:"_id"`
 	CreatedAt           string `json:"created_at"`
 	UpdatedAt           string `json:"updated_at"`
@@ -97,9 +97,9 @@ func SelectHandler(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	var results []DeviceCloudWebhook
+	var results []DeviceCloudResult
 	for rows.Next() {
-		var webhook DeviceCloudWebhook
+		var webhook DeviceCloudResult
 		var incomingNumberMatch uint8
 		var spam uint8
 		var textRecognized uint8
