@@ -9,6 +9,7 @@ type Config struct {
 	LogLevel      string
 	ClickHouseDSN string
 	JWTSecret     string
+	PostgresDSN   string
 }
 
 func NewConfig() (*Config, error) {
@@ -17,9 +18,10 @@ func NewConfig() (*Config, error) {
 		LogLevel:      getEnv("LOG_LEVEL", "INFO"),
 		ClickHouseDSN: getEnv("CLICKHOUSE_DSN", "tcp://localhost:9000?username=default&password=default&debug=true"),
 		JWTSecret:     getEnv("JWT_SECRET", "default_super_secret"),
+		PostgresDSN:   getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/analytics?sslmode=disable"),
 	}, nil
-
 }
+
 func getEnv(key, defaultVal string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value

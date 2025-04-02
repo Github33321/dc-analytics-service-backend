@@ -4,14 +4,16 @@ import (
 	"dc-analytics-service-backend/internal/config"
 	"dc-analytics-service-backend/internal/handler"
 	"dc-analytics-service-backend/internal/middleware"
+	"dc-analytics-service-backend/internal/repository"
+	"dc-analytics-service-backend/internal/service"
 	"dc-analytics-service-backend/pkg/clickhouse"
 	"dc-analytics-service-backend/pkg/logger"
+	"dc-analytics-service-backend/pkg/postgres"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
 	"path/filepath"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -32,24 +34,42 @@ func main() {
 	defer logg.Sync()
 	logg.Sugar().Infof("Логгер инициализирован с уровнем %s", cfg.LogLevel)
 
-	chConn, err := clickhouse.WaitForClickHouse(cfg.ClickHouseDSN, 10, 5*time.Second)
-	if err != nil {
-		logg.Sugar().Fatalf("Ошибка подключения к ClickHouse: %v", err)
-	}
-	defer chConn.Close()
-	logg.Sugar().Info("Подключение к ClickHouse установлено")
-
-	handler.SetDB(chConn)
-
 	router := gin.Default()
-	router.GET("/ping", handler.PingHandler)
 
-	deviceCloudWebhooks := router.GET("/deviceCloudWebhooks", handler.SelectHandler)
-	deviceCloudWebhooks.Use(middleware.JWTMiddleware(cfg.JWTSecret))
-	deviceCloudWebhooks.GET("", handler.SecureHandler)
+	router.GET("/deviceCloudWebhooks", func(c *gin.Context) {
+
+		chConn, err := clickhouse.WaitForClickHouse(cfg.ClickHouseDSN, 10, 5*time.Second)
+		if err != nil {
+			logg.Sugar().Fatalf("Ошибка подключения к ClickHouse: %v", err)
+		}
+		defer chConn.Close()
+		logg.Sugar().Info("Подключение к ClickHouse установлено")
+
+		handler.SetDB(chConn)
+
+		handler.SelectHandler(c)
+	})
+
+	db, err := postgres.OpenDB(cfg.PostgresDSN)
+	if err != nil {
+		logg.Sugar().Fatalf("Ошибка подключения к базе данных: %v", err)
+	}
+	defer db.Close()
+
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
+	userHandler := handler.NewUserHandler(userService)
+
+	secure := router.Group("/v1")
+	secure.Use(middleware.JWTMiddleware(cfg.JWTSecret))
+	{
+		secure.GET("/analytics/ping", handler.PingHandler)
+		secure.GET("/users/:id", userHandler.GetUserByID)
+		secure.GET("/users", userHandler.GetUsers)
+		secure.POST("/users", userHandler.CreateUser)
+	}
 
 	logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
-
 	if err := router.Run(":" + cfg.Port); err != nil {
 		logg.Sugar().Fatalf("Ошибка сервера: %v", err)
 	}

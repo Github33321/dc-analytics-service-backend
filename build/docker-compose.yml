@@ -1,28 +1,23 @@
 version: '3.8'
 
 services:
-  backend:
-    build:
-      context: ..
-      dockerfile: ./build/Dockerfile  # <-- Явно указываем путь
-    ports:
-      - "8081:8081"
+  postgres:
+    image: postgres:13
+    container_name: postgres
     environment:
-      - PORT=8081
-      - LOG_LEVEL=INFO
-      - CLICKHOUSE_DSN=tcp://clickhouse:9000?debug=true
-    depends_on:
-      - clickhouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: analytics
+    ports:
+      - "5432:5432"
+    volumes:
+    - ./data/db:/var/lib/postgresql/data
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - postgres_network
+    restart: always
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    environment:
-      - CLICKHOUSE_SKIP_USER_SETUP=1
-    ports:
-      - "9000:9000"
-      - "8123:8123"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8123/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+networks:
+  postgres_network:
+    driver: bridge
+
