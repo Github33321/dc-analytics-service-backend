@@ -67,6 +67,10 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
 
+	deviceRepo := repository.NewDeviceRepository(db)
+	deviceService := service.NewDeviceService(deviceRepo)
+	deviceHandler := handler.NewDeviceHandler(deviceService)
+
 	secure := router.Group("/v1")
 	secure.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	{
@@ -74,6 +78,12 @@ func main() {
 		secure.GET("/users/:id", userHandler.GetUserByID)
 		secure.GET("/users", userHandler.GetUsers)
 		secure.POST("/users", userHandler.CreateUser)
+
+		secure.GET("/devices/:id", deviceHandler.GetDeviceByID)
+		secure.GET("/devices", deviceHandler.GetDevices)
+		secure.PATCH("/devices/:id", deviceHandler.UpdateDevice)
+		secure.DELETE("/devices/:id", deviceHandler.DeleteDevice)
+
 	}
 
 	logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
