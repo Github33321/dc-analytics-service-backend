@@ -9,6 +9,7 @@ type UserService interface {
 	GetUserByID(ctx context.Context, id int64) (*models.User, error)
 	CreateUser(ctx context.Context, req CreateUserRequest) (*models.User, error)
 	GetUsers(ctx context.Context) ([]models.User, error)
+	DeleteUser(ctx context.Context, id int64) error
 }
 
 type CreateUserRequest struct {

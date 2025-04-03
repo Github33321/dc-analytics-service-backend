@@ -33,3 +33,6 @@ func (s *userService) CreateUser(ctx context.Context, req CreateUserRequest) (*m
 func (s *userService) GetUsers(ctx context.Context) ([]models.User, error) {
 	return s.userRepo.GetUsers(ctx)
 }
+func (s *userService) DeleteUser(ctx context.Context, id int64) error {
+	return s.userRepo.DeleteUser(ctx, id)
+}

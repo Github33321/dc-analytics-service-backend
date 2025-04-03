@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -10,6 +11,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id int64) (*models.User, error)
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	GetUsers(ctx context.Context) ([]models.User, error)
+	DeleteUser(ctx context.Context, id int64) error
 }
 
 type userRepository struct {
@@ -50,4 +52,20 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]models.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *userRepository) DeleteUser(ctx context.Context, id int64) error {
+	query := `DELETE FROM users WHERE id = $1`
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("Пользователь с id %d не найден", id)
+	}
+	return nil
 }

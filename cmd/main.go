@@ -78,6 +78,7 @@ func main() {
 		secure.GET("/users/:id", userHandler.GetUserByID)
 		secure.GET("/users", userHandler.GetUsers)
 		secure.POST("/users", userHandler.CreateUser)
+		secure.DELETE("/users/:id", userHandler.DeleteUser)
 
 		secure.GET("/devices/:id", deviceHandler.GetDeviceByID)
 		secure.GET("/devices", deviceHandler.GetDevices)
