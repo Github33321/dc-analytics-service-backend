@@ -70,3 +70,4 @@ docker-compose.override.yml
 *.sqlite
 *.sqlite3
 *.db
+deploy.sh

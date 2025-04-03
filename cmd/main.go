@@ -63,6 +63,8 @@ func main() {
 		logg.Sugar().Fatalf("Не удалось проверить соединение с БД: %v", err)
 	}
 
+	router.POST("/login", handler.LoginHandler)
+
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
@@ -75,6 +77,7 @@ func main() {
 	secure.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	{
 		secure.GET("/ping", handler.PingHandler)
+
 		secure.GET("/users/:id", userHandler.GetUserByID)
 		secure.GET("/users", userHandler.GetUsers)
 		secure.POST("/users", userHandler.CreateUser)
