@@ -18,7 +18,7 @@ func NewConfig() (*Config, error) {
 		LogLevel:      getEnv("LOG_LEVEL", "INFO"),
 		ClickHouseDSN: getEnv("CLICKHOUSE_DSN", "tcp://localhost:9000?username=default&password=default&debug=true"),
 		JWTSecret:     getEnv("JWT_SECRET", "default_super_secret"),
-		PostgresDSN:   getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/analytics?sslmode=disable"),
+		PostgresDSN:   getEnv("POSTGRES_DSN", ""),
 	}, nil
 }
 

@@ -50,11 +50,18 @@ func main() {
 		handler.SelectHandler(c)
 	})
 
-	db, err := postgres.OpenDB(cfg.PostgresDSN)
+	db, err := postgres.OpenDB()
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logg.Sugar().Errorf("Ошибка при закрытии соединения с БД: %v", err)
+		}
+	}()
+	if err := db.Ping(); err != nil {
+		logg.Sugar().Fatalf("Не удалось проверить соединение с БД: %v", err)
+	}
 
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)

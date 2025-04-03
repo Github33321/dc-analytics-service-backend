@@ -1,6 +1,3 @@
-
-
-
 CREATE TABLE users (
                        id BIGSERIAL PRIMARY KEY,
                        email VARCHAR(255) UNIQUE NOT NULL,
@@ -14,10 +11,18 @@ CREATE TABLE users (
                        last_login TIMESTAMP
 );
 
-INSERT INTO users (email, username, password, role, is_active, created_at, updated_at)
+INSERT INTO users (email, username, password, role, is_active, created_at, updated_at, verified_at, last_login)
 VALUES
-    ('user1@example.com', 'user1', 'password1', 'admin', TRUE, NOW(), NOW()),
-    ('user2@example.com', 'user2', 'password2', 'user', TRUE, NOW(), NOW());
+    ('user1@example.com', 'user1', 'password1', 'admin', TRUE, NOW(), NOW(), NOW(), NOW()),
+    ('user2@example.com', 'user2', 'password2', 'user', TRUE, NOW(), NOW(), NOW(), NOW()),
+    ('user3@example.com', 'user3', 'password3', 'user', TRUE, NOW(), NOW(), NULL, NULL),
+    ('user4@example.com', 'user4', 'password4', 'user', TRUE, NOW(), NOW(), NULL, NULL),
+    ('user5@example.com', 'user5', 'password5', 'user', FALSE, NOW(), NOW(), NULL, NULL),
+    ('user6@example.com', 'user6', 'password6', 'admin', TRUE, NOW(), NOW(), NOW(), NOW()),
+    ('user7@example.com', 'user7', 'password7', 'user', TRUE, NOW(), NOW(), NULL, NOW()),
+    ('user8@example.com', 'user8', 'password8', 'user', FALSE, NOW(), NOW(), NULL, NULL),
+    ('user9@example.com', 'user9', 'password9', 'admin', TRUE, NOW(), NOW(), NOW(), NOW()),
+    ('user10@example.com', 'user10', 'password10', 'user', TRUE, NOW(), NOW(), NULL, NULL);
 
 
 
