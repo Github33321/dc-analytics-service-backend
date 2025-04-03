@@ -71,10 +71,10 @@ func main() {
 	deviceService := service.NewDeviceService(deviceRepo)
 	deviceHandler := handler.NewDeviceHandler(deviceService)
 
-	secure := router.Group("/v1")
+	secure := router.Group("/v1/analytics")
 	secure.Use(middleware.JWTMiddleware(cfg.JWTSecret))
 	{
-		secure.GET("/analytics/ping", handler.PingHandler)
+		secure.GET("/ping", handler.PingHandler)
 		secure.GET("/users/:id", userHandler.GetUserByID)
 		secure.GET("/users", userHandler.GetUsers)
 		secure.POST("/users", userHandler.CreateUser)
