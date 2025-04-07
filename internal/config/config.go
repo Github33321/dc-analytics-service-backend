@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"fmt"
+	"github.com/joho/godotenv"
+	"os"
+)
 
 type ClickhouseConfig struct {
 	Host     string
@@ -19,6 +23,9 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Не удалось загрузить файл .env, используются переменные окружения из системы")
+	}
 	debug := getEnv("CLICKHOUSE_DEBUG", "false")
 	return &Config{
 		Port:      getEnv("PORT", "8081"),
@@ -36,6 +43,7 @@ func NewConfig() (*Config, error) {
 }
 
 func getEnv(key, defaultVal string) string {
+
 	if val := os.Getenv(key); val != "" {
 		return val
 	}
