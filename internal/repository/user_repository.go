@@ -4,7 +4,8 @@ import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
 	"fmt"
-	"github.com/jmoiron/sqlx"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepository interface {
@@ -15,40 +16,46 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db *sqlx.DB
+	db *pgxpool.Pool
 }
 
-func NewUserRepository(db *sqlx.DB) UserRepository {
+func NewUserRepository(db *pgxpool.Pool) UserRepository {
 	return &userRepository{db: db}
 }
 
 func (r *userRepository) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
-	query := `SELECT id, email, username, password, role, is_active, created_at, updated_at, verified_at, last_login FROM users WHERE id = $1`
+	query := `
+		SELECT id, email, username, password, role, is_active, 
+		       created_at, updated_at, verified_at, last_login 
+		FROM users 
+		WHERE id = $1`
 	var user models.User
-	err := r.db.GetContext(ctx, &user, query, id)
-	if err != nil {
+	if err := pgxscan.Get(ctx, r.db, &user, query, id); err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
-	query := `INSERT INTO users (email, username, password, role, is_active, created_at, updated_at) 
-			  VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) 
-			  RETURNING id, email, username, password, role, is_active, created_at, updated_at, verified_at, last_login`
-
-	err := r.db.GetContext(ctx, user, query, user.Email, user.Username, user.Password, user.Role, user.IsActive)
-	if err != nil {
+	query := `
+		INSERT INTO users (email, username, password, role, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, email, username, password, role, is_active, created_at, updated_at, verified_at, last_login`
+	if err := pgxscan.Get(ctx, r.db, user, query,
+		user.Email, user.Username, user.Password, user.Role, user.IsActive,
+	); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (r *userRepository) GetUsers(ctx context.Context) ([]models.User, error) {
-	query := `SELECT id, email, username, password, role, is_active, created_at, updated_at, verified_at, last_login FROM users`
+	query := `
+		SELECT id, email, username, password, role, is_active, 
+		       created_at, updated_at, verified_at, last_login 
+		FROM users`
 	var users []models.User
-	err := r.db.SelectContext(ctx, &users, query)
-	if err != nil {
+	if err := pgxscan.Select(ctx, r.db, &users, query); err != nil {
 		return nil, err
 	}
 	return users, nil
@@ -56,15 +63,11 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]models.User, error) {
 
 func (r *userRepository) DeleteUser(ctx context.Context, id int64) error {
 	query := `DELETE FROM users WHERE id = $1`
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
+	if result.RowsAffected() == 0 {
 		return fmt.Errorf("Пользователь с id %d не найден", id)
 	}
 	return nil

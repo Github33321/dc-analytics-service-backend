@@ -4,8 +4,9 @@ import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
 	"fmt"
+	"github.com/georgysavva/scany/v2/pgxscan"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DeviceRepository interface {
@@ -16,18 +17,17 @@ type DeviceRepository interface {
 }
 
 type deviceRepository struct {
-	db *sqlx.DB
+	db *pgxpool.Pool
 }
 
-func NewDeviceRepository(db *sqlx.DB) DeviceRepository {
+func NewDeviceRepository(db *pgxpool.Pool) DeviceRepository {
 	return &deviceRepository{db: db}
 }
 
 func (r *deviceRepository) GetDevices(ctx context.Context) ([]models.Device, error) {
 	query := `SELECT * FROM devices`
 	var devices []models.Device
-	err := r.db.SelectContext(ctx, &devices, query)
-	if err != nil {
+	if err := pgxscan.Select(ctx, r.db, &devices, query); err != nil {
 		return nil, err
 	}
 	return devices, nil
@@ -36,8 +36,7 @@ func (r *deviceRepository) GetDevices(ctx context.Context) ([]models.Device, err
 func (r *deviceRepository) GetDeviceByID(ctx context.Context, id int64) (*models.Device, error) {
 	query := `SELECT * FROM devices WHERE id = $1`
 	var device models.Device
-	err := r.db.GetContext(ctx, &device, query, id)
-	if err != nil {
+	if err := pgxscan.Get(ctx, r.db, &device, query, id); err != nil {
 		return nil, err
 	}
 	return &device, nil
@@ -54,14 +53,13 @@ func (r *deviceRepository) UpdateDevice(ctx context.Context, device *models.Devi
 		WHERE id = $20
 		RETURNING *
 	`
-	err := r.db.GetContext(ctx, device, query,
+	if err := pgxscan.Get(ctx, r.db, device, query,
 		device.SmartCallHiya, device.Platform, device.Serial, device.Imei, device.Number,
 		device.Carrier, device.Priority, device.Model, device.OSVersion, device.Server,
 		device.Cloud, device.Config, device.Hub, device.Port, device.Active,
 		device.UIVersion, device.BuildNumber, device.BasebandVersion, device.SPSoftwareVersion,
 		device.ID,
-	)
-	if err != nil {
+	); err != nil {
 		return nil, err
 	}
 	return device, nil
@@ -69,17 +67,12 @@ func (r *deviceRepository) UpdateDevice(ctx context.Context, device *models.Devi
 
 func (r *deviceRepository) DeleteDevice(ctx context.Context, id int64) error {
 	query := `DELETE FROM devices WHERE id = $1`
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
+	if result.RowsAffected() == 0 {
 		return fmt.Errorf("устройство с id %d не найдено", id)
 	}
-
 	return nil
 }

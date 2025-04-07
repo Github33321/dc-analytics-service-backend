@@ -21,8 +21,17 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	expectedLogin := os.Getenv("LOGIN")
+	if expectedLogin == "" {
+		expectedLogin = "login"
+	}
 	expectedPassword := os.Getenv("PASSWORD")
+	if expectedPassword == "" {
+		expectedPassword = "password"
+	}
 	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "default_jwt_secret"
+	}
 
 	if req.Login != expectedLogin || req.Password != expectedPassword {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные"})
