@@ -20,14 +20,14 @@ func NewClickhouseService(repo repository.IClickhouse) ClickhouseService {
 
 func (s *clickhouseService) GetResults(ctx context.Context) ([]models.DeviceCloudResult, error) {
 	query := `
-		SELECT 
+		SELECT
 			_id,
-			created_at,
-			updated_at,
-			toString(MessageId) as MessageId,
+			toString(created_at) AS created_at,
+			toString(updated_at) AS updated_at,
+			toString(MessageId) AS MessageId,
 			from_num,
 			originating_carrier,
-			created_at_str,
+			toString(created_at_str) AS created_at_str,
 			device_os,
 			device_carrier,
 			status,
@@ -39,24 +39,25 @@ func (s *clickhouseService) GetResults(ctx context.Context) ([]models.DeviceClou
 			source_type_id,
 			notification_url,
 			call_duration,
-			call_end,
-			call_start,
+			toString(call_end) AS call_end,
+			toString(call_start) AS call_start,
 			cnam,
 			device_model,
 			display_cnam,
 			hiya,
 			incoming_number,
-			toInt8(incoming_number_match) as incoming_number_match,
+			toUInt8(incoming_number_match) AS incoming_number_match,
 			log_cnam,
 			ocr_cloud_id,
 			screenshot,
-			toInt8(spam) as spam,
+			toUInt8(spam) AS spam,
 			text,
-			toInt8(text_recognized) as text_recognized,
+			toUInt8(text_recognized) AS text_recognized,
 			to_num
 		FROM device_cloud_webhooks
 		LIMIT 10
 	`
+
 	rows, err := s.repo.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -67,6 +68,7 @@ func (s *clickhouseService) GetResults(ctx context.Context) ([]models.DeviceClou
 	for rows.Next() {
 		var result models.DeviceCloudResult
 		var incomingNumberMatch, spam, textRecognized uint8
+
 		err := rows.Scan(
 			&result.ID,
 			&result.CreatedAt,
@@ -105,9 +107,10 @@ func (s *clickhouseService) GetResults(ctx context.Context) ([]models.DeviceClou
 		if err != nil {
 			return nil, err
 		}
-		result.IncomingNumberMatch = incomingNumberMatch == 1
-		result.Spam = spam == 1
-		result.TextRecognized = textRecognized == 1
+
+		result.IncomingNumberMatch = (incomingNumberMatch == 1)
+		result.Spam = (spam == 1)
+		result.TextRecognized = (textRecognized == 1)
 
 		results = append(results, result)
 	}

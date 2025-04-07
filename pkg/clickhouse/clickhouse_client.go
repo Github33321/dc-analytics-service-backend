@@ -18,7 +18,7 @@ type Client struct {
 
 func NewClient(ctx context.Context, chConfig *config.ClickhouseConfig) (*Client, error) {
 	conn, err := clickhouse.Open(&clickhouse.Options{
-		Addr: []string{chConfig.Host}, // например, "localhost:9000"
+		Addr: []string{chConfig.Host},
 		Auth: clickhouse.Auth{
 			Database: chConfig.Database,
 			Username: chConfig.Username,

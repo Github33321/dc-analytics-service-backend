@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"dc-analytics-service-backend/internal/config"
 	"dc-analytics-service-backend/internal/handler"
@@ -32,11 +37,11 @@ func main() {
 
 	router := gin.Default()
 
+	// Подключение к PostgreSQL
 	pgDB, err := postgres.OpenDB(ctx, cfg.PostgresDSN)
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к PostgreSQL: %v", err)
 	}
-	defer pgDB.Close()
 
 	if err := postgres.PingDB(ctx, pgDB); err != nil {
 		logg.Sugar().Fatalf("Не удалось проверить соединение с PostgreSQL: %v", err)
@@ -49,10 +54,12 @@ func main() {
 	deviceRepo := repository.NewDeviceRepository(pgDB)
 	deviceService := service.NewDeviceService(deviceRepo)
 
+	// Подключение к ClickHouse
 	chClient, err := clickhouse.NewClient(ctx, cfg.ClickhouseConfig)
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к ClickHouse: %v", err)
 	}
+	logg.Sugar().Info("Соединение с ClickHouse установлено")
 
 	clickhouseRepo := repository.NewClickhouseRepo(chClient.Conn, cfg)
 	clickhouseService := service.NewClickhouseService(clickhouseRepo)
@@ -60,8 +67,36 @@ func main() {
 	h := handler.NewHandler(userService, deviceService, clickhouseService)
 	h.InitRoutes(router, cfg.JWTSecret)
 
-	logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
-	if err := router.Run(":" + cfg.Port); err != nil {
-		logg.Sugar().Fatalf("Ошибка сервера: %v", err)
+	srv := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: router,
 	}
+
+	go func() {
+		logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logg.Sugar().Fatalf("Ошибка сервера: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	logg.Sugar().Info("Получен сигнал завершения, останавливаем сервер...")
+
+	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctxShutDown); err != nil {
+		logg.Sugar().Fatal("Ошибка при завершении работы сервера: ", err)
+	}
+
+	pgDB.Close()
+
+	if err := chClient.Conn.Close(); err != nil {
+		logg.Sugar().Errorf("Ошибка при закрытии ClickHouse: %v", err)
+	}
+
+	logg.Sugar().Info("Сервер и соединения остановлены корректно")
 }
