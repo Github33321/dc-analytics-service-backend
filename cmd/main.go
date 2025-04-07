@@ -49,12 +49,12 @@ func main() {
 	deviceRepo := repository.NewDeviceRepository(pgDB)
 	deviceService := service.NewDeviceService(deviceRepo)
 
-	chClient, err := clickhouse.NewClickhouseClient(ctx, cfg.ClickhouseConfig)
+	chClient, err := clickhouse.NewClient(ctx, cfg.ClickhouseConfig)
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к ClickHouse: %v", err)
 	}
 
-	clickhouseRepo := repository.NewClickhouseRepo(chClient.DB, cfg)
+	clickhouseRepo := repository.NewClickhouseRepo(chClient.Conn, cfg)
 	clickhouseService := service.NewClickhouseService(clickhouseRepo)
 
 	h := handler.NewHandler(userService, deviceService, clickhouseService)

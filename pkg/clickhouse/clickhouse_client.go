@@ -3,46 +3,52 @@ package clickhouse
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"dc-analytics-service-backend/internal/config"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/sirupsen/logrus"
 )
 
-type Clickhouse struct {
-	DB       *pgx.Conn
+type Client struct {
+	Conn     clickhouse.Conn
 	Database string
 }
 
-func NewClickhouseClient(ctx context.Context, chConfig *config.ClickhouseConfig) (*Clickhouse, error) {
-	dsn := strings.TrimSpace(chConfig.ConnectionURL)
-	conn, err := pgx.Connect(ctx, dsn)
+func NewClient(ctx context.Context, chConfig *config.ClickhouseConfig) (*Client, error) {
+	conn, err := clickhouse.Open(&clickhouse.Options{
+		Addr: []string{chConfig.Host}, // например, "localhost:9000"
+		Auth: clickhouse.Auth{
+			Database: chConfig.Database,
+			Username: chConfig.Username,
+			Password: chConfig.Password,
+		},
+		Debug:       chConfig.Debug,
+		DialTimeout: 5 * time.Second,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to ClickHouse using pgx: %w", err)
+		return nil, fmt.Errorf("failed to connect to ClickHouse: %w", err)
 	}
 
 	if err := conn.Ping(ctx); err != nil {
-		conn.Close(ctx)
 		return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
 	}
 
-	ch := &Clickhouse{
-		DB:       conn,
+	client := &Client{
+		Conn:     conn,
 		Database: chConfig.Database,
 	}
 
-	go ch.checkClickhousePing()
+	go client.checkPing()
 
-	return ch, nil
+	return client, nil
 }
 
-func (c *Clickhouse) checkClickhousePing() {
+func (c *Client) checkPing() {
 	for {
 		time.Sleep(time.Minute)
-		if err := c.DB.Ping(context.Background()); err != nil {
+		if err := c.Conn.Ping(context.Background()); err != nil {
 			logrus.Error(fmt.Errorf("clickhouse ping error: %v", err))
 		}
 	}

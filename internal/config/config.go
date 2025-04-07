@@ -3,8 +3,11 @@ package config
 import "os"
 
 type ClickhouseConfig struct {
-	ConnectionURL string
-	Database      string
+	Host     string
+	Database string
+	Username string
+	Password string
+	Debug    bool
 }
 
 type Config struct {
@@ -16,13 +19,17 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
+	debug := getEnv("CLICKHOUSE_DEBUG", "false")
 	return &Config{
 		Port:      getEnv("PORT", "8081"),
 		JWTSecret: getEnv("JWT_SECRET", "default_super_secret"),
 		LogLevel:  getEnv("LOG_LEVEL", "INFO"),
 		ClickhouseConfig: &ClickhouseConfig{
-			ConnectionURL: getEnv("CLICKHOUSE_DSN", "tcp://localhost:9000?username=default&password=default&debug=true"),
-			Database:      getEnv("CLICKHOUSE_DB", "default"),
+			Host:     getEnv("CLICKHOUSE_HOST", "localhost:9000"),
+			Database: getEnv("CLICKHOUSE_DB", "default"),
+			Username: getEnv("CLICKHOUSE_USERNAME", "default"),
+			Password: getEnv("CLICKHOUSE_PASSWORD", "default"),
+			Debug:    debug == "true",
 		},
 		PostgresDSN: getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/analytics?sslmode=disable"),
 	}, nil
