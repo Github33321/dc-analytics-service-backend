@@ -17,6 +17,18 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{UserService: userService}
 }
 
+// GetUserByID godoc
+// @Summary      GetUserByID
+// @Description  Возвращает данные пользователя, если он существует
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID пользователя"
+// @Success      200  {object}  models.User
+// @Failure      400  {object}  map[string]string "Неверный формат ID"
+// @Failure      404  {object}  map[string]string "Пользователь не найден"
+// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /v1/analytics/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
@@ -37,6 +49,18 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// CreateUser godoc
+// @Summary      CreateUser
+// @Description  Принимает данные и создает пользователя в системе
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        userData  body   service.CreateUserRequest  true  "Данные пользователя"
+// @Success      201  {object}  models.User
+// @Failure      400  {object}  map[string]string "Неверные данные для создания пользователя"
+// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /v1/analytics/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var newUser service.CreateUserRequest
 	if err := c.ShouldBindJSON(&newUser); err != nil {
@@ -53,6 +77,15 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
+// GetUsers godoc
+// @Summary      GetUsers
+// @Description  Возвращает массив пользователей
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   models.User
+// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /v1/analytics/users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	users, err := h.UserService.GetUsers(c)
 	if err != nil {
@@ -63,6 +96,18 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+// DeleteUser godoc
+// @Summary      DeleteUser
+// @Description  Удаляет пользователя по его ID
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID пользователя"
+// @Success      200  {object}  map[string]string "Пользователь удален"
+// @Failure      400  {object}  map[string]string "Неверный формат ID"
+// @Failure      404  {object}  map[string]string "Пользователь не найден"
+// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /v1/analytics/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)

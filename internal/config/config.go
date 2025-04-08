@@ -23,7 +23,7 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load("/opt/dc-analytics-service/.env"); err != nil {
 		fmt.Println("Не удалось загрузить файл .env, используются переменные окружения из системы")
 	}
 	debug := getEnv("CLICKHOUSE_DEBUG", "false")

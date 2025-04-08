@@ -1,0 +1,510 @@
+definitions:
+  handler.LoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  models.Device:
+    properties:
+      active:
+        type: integer
+      baseband_version:
+        type: string
+      build_number:
+        type: string
+      carrier:
+        type: string
+      cloud:
+        type: integer
+      config:
+        type: integer
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      hub:
+        type: string
+      id:
+        type: integer
+      imei:
+        type: string
+      model:
+        type: string
+      number:
+        type: string
+      os_version:
+        type: string
+      platform:
+        type: string
+      port:
+        type: integer
+      priority:
+        type: string
+      serial:
+        type: string
+      server:
+        type: string
+      smart_call_hiya:
+        type: integer
+      sp_software_version:
+        type: string
+      ui_version:
+        type: number
+      updated_at:
+        type: string
+    type: object
+  models.TaskStat:
+    properties:
+      count:
+        type: integer
+      created_at_str:
+        type: string
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      last_login:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+      verified_at:
+        type: string
+    type: object
+  service.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      is_active:
+        type: boolean
+      password:
+        type: string
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+  service.UpdateDeviceRequest:
+    properties:
+      active:
+        type: integer
+      baseband_version:
+        type: string
+      build_number:
+        type: string
+      carrier:
+        type: string
+      cloud:
+        type: integer
+      config:
+        type: integer
+      hub:
+        type: string
+      imei:
+        type: string
+      model:
+        type: string
+      number:
+        type: string
+      os_version:
+        type: string
+      platform:
+        type: string
+      port:
+        type: integer
+      priority:
+        type: string
+      serial:
+        type: string
+      server:
+        type: string
+      smart_call_hiya:
+        type: integer
+      sp_software_version:
+        type: string
+      ui_version:
+        type: number
+    type: object
+info:
+  contact: {}
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Принимает логин и пароль, возвращает JWT-токен при успехе
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: loginData
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Возвращает поле token и message
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверный формат запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неверные учетные данные
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка генерации токена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: LoginHandler
+      tags:
+      - auth
+  /ping:
+    get:
+      description: Возвращает "pong" если сервер работает
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: PingHandler
+      tags:
+      - ping
+  /v1/analytics/devices:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает массив всех устройств в системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Device'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetDevices
+      tags:
+      - devices
+  /v1/analytics/devices/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет устройство, если оно существует
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Устройство удалено
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Устройство не найдено
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: DeleteDevice
+      tags:
+      - devices
+    get:
+      consumes:
+      - application/json
+      description: Ищет устройство в базе данных и возвращает, если найдено
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Device'
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Устройство не найдено
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetDeviceByID
+      tags:
+      - devices
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет поля устройства, переданные в теле запроса (PATCH)
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: device
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Device'
+        "400":
+          description: Неверный формат ID или некорректные данные обновления
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: UpdateDevice
+      tags:
+      - devices
+  /v1/analytics/tasks/stats:
+    get:
+      consumes:
+      - application/json
+      description: Если параметр date не задан, возвращает статистику за все даты.
+        Если задан, то только за указанный день.
+      parameters:
+      - description: Дата в формате YYYY-MM-DDTHH:MM:SSZ
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.TaskStat'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetTaskStats
+      tags:
+      - tasks
+  /v1/analytics/users:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает массив пользователей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetUsers
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Принимает данные и создает пользователя в системе
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: userData
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Неверные данные для создания пользователя
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: CreateUser
+      tags:
+      - users
+  /v1/analytics/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя по его ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь удален
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: DeleteUser
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Возвращает данные пользователя, если он существует
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetUserByID
+      tags:
+      - users
+swagger: "2.0"

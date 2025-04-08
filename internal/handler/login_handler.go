@@ -13,6 +13,18 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// LoginHandler godoc
+// @Summary      LoginHandler
+// @Description  Принимает логин и пароль, возвращает JWT-токен при успехе
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        loginData  body    LoginRequest  true  "Логин и пароль"
+// @Success      200  {object}  map[string]interface{}  "Возвращает поле token и message"
+// @Failure      400  {object}  map[string]string  "Неверный формат запроса"
+// @Failure      401  {object}  map[string]string  "Неверные учетные данные"
+// @Failure      500  {object}  map[string]string  "Ошибка генерации токена"
+// @Router       /login [post]
 func LoginHandler(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

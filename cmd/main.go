@@ -2,13 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	"dc-analytics-service-backend/internal/config"
 	"dc-analytics-service-backend/internal/handler"
 	"dc-analytics-service-backend/internal/repository"
@@ -16,8 +9,13 @@ import (
 	"dc-analytics-service-backend/pkg/clickhouse"
 	"dc-analytics-service-backend/pkg/logger"
 	"dc-analytics-service-backend/pkg/postgres"
-
 	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -64,7 +62,10 @@ func main() {
 	clickhouseRepo := repository.NewClickhouseRepo(chClient.Conn, cfg)
 	clickhouseService := service.NewClickhouseService(clickhouseRepo)
 
-	h := handler.NewHandler(userService, deviceService, clickhouseService)
+	taskStatRepo := repository.NewTaskStatRepository(clickhouseRepo)
+	taskStatService := service.NewTaskStatService(taskStatRepo)
+
+	h := handler.NewHandler(userService, deviceService, clickhouseService, taskStatService)
 	h.InitRoutes(router, cfg.JWTSecret)
 
 	srv := &http.Server{
