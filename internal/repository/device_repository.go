@@ -14,6 +14,7 @@ type DeviceRepository interface {
 	GetDeviceByID(ctx context.Context, id int64) (*models.Device, error)
 	UpdateDevice(ctx context.Context, device *models.Device) (*models.Device, error)
 	DeleteDevice(ctx context.Context, id int64) error
+	GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error)
 }
 
 type deviceRepository struct {
@@ -75,4 +76,24 @@ func (r *deviceRepository) DeleteDevice(ctx context.Context, id int64) error {
 		return fmt.Errorf("устройство с id %d не найдено", id)
 	}
 	return nil
+}
+
+func (r *deviceRepository) GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error) {
+	var stats models.DeviceStatsResponse
+
+	query := `
+		SELECT 
+			count(*) AS total_count,
+			sum(CASE WHEN lower(platform) = 'android' THEN 1 ELSE 0 END) AS android_count,
+			sum(CASE WHEN lower(platform) = 'ios' THEN 1 ELSE 0 END) AS ios_count,
+			sum(CASE WHEN lower(model) LIKE 'pixel%' THEN 1 ELSE 0 END) AS pixel_count,
+			sum(CASE WHEN smart_call_hiya = 1 THEN 1 ELSE 0 END) AS smart_call_hiya_count
+		FROM devices;
+	`
+
+	err := pgxscan.Get(ctx, r.db, &stats, query)
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
 }

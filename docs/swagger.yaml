@@ -58,6 +58,39 @@ definitions:
       updated_at:
         type: string
     type: object
+  models.DeviceCallStatsResponse:
+    properties:
+      calls_by_day:
+        items:
+          $ref: '#/definitions/models.TaskStat'
+        type: array
+      status_counts:
+        items:
+          $ref: '#/definitions/models.StatusCount'
+        type: array
+      today_calls:
+        type: integer
+    type: object
+  models.DeviceStatsResponse:
+    properties:
+      android_count:
+        type: integer
+      ios_count:
+        type: integer
+      pixel_count:
+        type: integer
+      smart_call_hiya_count:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  models.StatusCount:
+    properties:
+      count:
+        type: integer
+      status:
+        type: string
+    type: object
   models.TaskStat:
     properties:
       count:
@@ -145,6 +178,28 @@ definitions:
 info:
   contact: {}
 paths:
+  /devices/stats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает общее количество устройств, количество устройств с платформой
+        android, ios, Pixel и устройств с smart_call_hiya == 1
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DeviceStatsResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetDeviceStats
+      tags:
+      - devices
   /login:
     post:
       consumes:
@@ -343,14 +398,18 @@ paths:
       summary: UpdateDevice
       tags:
       - devices
-  /v1/analytics/tasks/stats:
+  /v1/analytics/devices/{id}/call-stats:
     get:
       consumes:
       - application/json
-      description: Если параметр date не задан, возвращает статистику за все даты.
-        Если задан, то только за указанный день.
+      description: Возвращает общее количество звонков за сегодня или по дате.
       parameters:
-      - description: Дата в формате YYYY-MM-DDTHH:MM:SSZ
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Дата в формате YYYY-MM-DD
         in: query
         name: date
         type: string
@@ -360,11 +419,44 @@ paths:
         "200":
           description: OK
           schema:
+            $ref: '#/definitions/models.DeviceCallStatsResponse'
+        "400":
+          description: Неверный формат ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetCallStats
+      tags:
+      - devices
+  /v1/analytics/tasks/stats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику звонков, сгруппированную по датам.
+      parameters:
+      - description: Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются
+          данные по всем датам.
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Массив агрегированных статистических данных
+          schema:
             items:
               $ref: '#/definitions/models.TaskStat'
             type: array
         "500":
-          description: Internal Server Error
+          description: Внутренняя ошибка сервера
           schema:
             additionalProperties:
               type: string

@@ -13,20 +13,21 @@ type Handler struct {
 	UserHandler               *UserHandler
 	DeviceHandler             *DeviceHandler
 	DeviceCloudWebhookHandler *DeviceCloudWebhookHandler
-	TaskStatHandler           *TaskStatHandler
+	DeviceStatsHandler        *DeviceStatsHandler
 }
 
 func NewHandler(
 	userService service.UserService,
 	deviceService service.DeviceService,
 	clickhouseService service.ClickhouseService,
-	taskStatService service.TaskStatService,
+	deviceStatsService service.DeviceStatsService,
+
 ) *Handler {
 	return &Handler{
 		UserHandler:               NewUserHandler(userService),
 		DeviceHandler:             NewDeviceHandler(deviceService),
 		DeviceCloudWebhookHandler: NewDeviceCloudWebhookHandler(clickhouseService),
-		TaskStatHandler:           NewTaskStatHandler(taskStatService),
+		DeviceStatsHandler:        NewDeviceStatsHandler(deviceStatsService),
 	}
 }
 
@@ -51,6 +52,9 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
 
-		secure.GET("/tasks/stats", h.TaskStatHandler.GetTaskStats)
+		secure.GET("/tasks/stats", h.DeviceStatsHandler.GetTaskStats)
+
+		secure.GET("/devices/:id/call-stats", h.DeviceStatsHandler.GetCallStats)
+		secure.GET("/devices/stats", h.DeviceHandler.GetDeviceStats)
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "dc-analytics-service-backend/docs"
 	"dc-analytics-service-backend/internal/config"
 	"dc-analytics-service-backend/internal/handler"
 	"dc-analytics-service-backend/internal/repository"
@@ -62,10 +63,10 @@ func main() {
 	clickhouseRepo := repository.NewClickhouseRepo(chClient.Conn, cfg)
 	clickhouseService := service.NewClickhouseService(clickhouseRepo)
 
-	taskStatRepo := repository.NewTaskStatRepository(clickhouseRepo)
-	taskStatService := service.NewTaskStatService(taskStatRepo)
+	deviceStatsRepo := repository.NewDeviceStatsRepository(clickhouseRepo)
+	deviceStatsService := service.NewDeviceStatsService(deviceStatsRepo)
 
-	h := handler.NewHandler(userService, deviceService, clickhouseService, taskStatService)
+	h := handler.NewHandler(userService, deviceService, clickhouseService, deviceStatsService)
 	h.InitRoutes(router, cfg.JWTSecret)
 
 	srv := &http.Server{

@@ -62,7 +62,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("token", tokenString, 24*3600, "/", "", false, true)
+	c.SetCookie("token", tokenString, 24*3600, "/", "", false, false)
 
 	c.JSON(http.StatusOK, gin.H{
 		"token":   tokenString,

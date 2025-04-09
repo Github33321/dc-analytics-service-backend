@@ -133,3 +133,21 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Устройство удалено"})
 }
+
+// GetDeviceStats godoc
+// @Summary      GetDeviceStats
+// @Description  Возвращает общее количество устройств, количество устройств с платформой android, ios, Pixel и устройств с smart_call_hiya == 1
+// @Tags         devices
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  models.DeviceStatsResponse
+// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /devices/stats [get]
+func (h *DeviceHandler) GetDeviceStats(c *gin.Context) {
+	stats, err := h.DeviceService.GetDeviceStats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
+}

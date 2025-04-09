@@ -1,0 +1,68 @@
+package handler
+
+import (
+	"net/http"
+
+	"dc-analytics-service-backend/internal/service"
+	"github.com/gin-gonic/gin"
+)
+
+type DeviceStatsHandler struct {
+	statsService service.DeviceStatsService
+}
+
+func NewDeviceStatsHandler(s service.DeviceStatsService) *DeviceStatsHandler {
+	return &DeviceStatsHandler{statsService: s}
+}
+
+// GetCallStats godoc
+// @Summary      GetCallStats
+// @Description  Возвращает общее количество звонков за сегодня или по дате.
+// @Tags         devices
+// @Accept       json
+// @Produce      json
+// @Param        id    path      int     true  "ID устройства"
+// @Param        date  query     string  false "Дата в формате YYYY-MM-DD"
+// @Success      200   {object}  models.DeviceCallStatsResponse
+// @Failure      400   {object}  map[string]string "Неверный формат ID"
+// @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /v1/analytics/devices/{id}/call-stats [get]
+func (h *DeviceStatsHandler) GetCallStats(c *gin.Context) {
+	idStr := c.Param("id")
+	deviceID := idStr
+
+	date := c.Query("date")
+
+	stats, err := h.statsService.GetCallStats(c.Request.Context(), deviceID, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// GetTaskStats godoc
+// @Summary      GetTaskStats
+// @Description  Возвращает статистику звонков, сгруппированную по датам.
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Param        date  query     string  false  "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам."
+// @Success      200   {array}   models.TaskStat  "Массив агрегированных статистических данных"
+// @Failure      500   {object}  map[string]string  "Внутренняя ошибка сервера"
+// @Router       /v1/analytics/tasks/stats [get]
+func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	date := c.Query("date")
+
+	stats, err := h.statsService.GetTaskStats(ctx, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Ошибка получения данных: " + err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
+}

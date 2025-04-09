@@ -95,3 +95,7 @@ func (s *deviceService) UpdateDevice(ctx context.Context, id int64, req UpdateDe
 func (s *deviceService) DeleteDevice(ctx context.Context, id int64) error {
 	return s.deviceRepo.DeleteDevice(ctx, id)
 }
+
+func (s *deviceService) GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error) {
+	return s.deviceRepo.GetDeviceStats(ctx)
+}

@@ -15,7 +15,7 @@ func JWTMiddleware(secretKey string) gin.HandlerFunc {
 		fmt.Println("Authorization Header:", authHeader)
 
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			fmt.Println("⚠Header не начинается с Bearer")
+			fmt.Println("Header не начинается с Bearer")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
 			return
 		}

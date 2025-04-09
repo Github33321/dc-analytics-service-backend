@@ -15,6 +15,38 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/devices/stats": {
+            "get": {
+                "description": "Возвращает общее количество устройств, количество устройств с платформой android, ios, Pixel и устройств с smart_call_hiya == 1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "GetDeviceStats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeviceStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "Принимает логин и пароль, возвращает JWT-токен при успехе",
@@ -314,9 +346,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/analytics/devices/{id}/call-stats": {
+            "get": {
+                "description": "Возвращает общее количество звонков за сегодня или по дате.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "GetCallStats",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID устройства",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата в формате YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeviceCallStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/analytics/tasks/stats": {
             "get": {
-                "description": "Если параметр date не задан, возвращает статистику за все даты. Если задан, то только за указанный день.",
+                "description": "Возвращает статистику звонков, сгруппированную по датам.",
                 "consumes": [
                     "application/json"
                 ],
@@ -330,14 +418,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Дата в формате YYYY-MM-DDTHH:MM:SSZ",
+                        "description": "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам.",
                         "name": "date",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Массив агрегированных статистических данных",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -346,7 +434,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -648,6 +736,57 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeviceCallStatsResponse": {
+            "type": "object",
+            "properties": {
+                "calls_by_day": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.TaskStat"
+                    }
+                },
+                "status_counts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.StatusCount"
+                    }
+                },
+                "today_calls": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.DeviceStatsResponse": {
+            "type": "object",
+            "properties": {
+                "android_count": {
+                    "type": "integer"
+                },
+                "ios_count": {
+                    "type": "integer"
+                },
+                "pixel_count": {
+                    "type": "integer"
+                },
+                "smart_call_hiya_count": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.StatusCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "status": {
                     "type": "string"
                 }
             }
