@@ -71,6 +71,13 @@ definitions:
       today_calls:
         type: integer
     type: object
+  models.DeviceScreenshot:
+    properties:
+      created_at:
+        type: string
+      screenshot:
+        type: string
+    type: object
   models.DeviceStatsResponse:
     properties:
       android_count:
@@ -178,6 +185,93 @@ definitions:
 info:
   contact: {}
 paths:
+  /devices:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список устройств. Для пагинации используйте query-параметры
+        page  и limit. Если параметры не указаны, используются значения по умолчанию
+        (page=1, limit=10).
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество элементов на страницу
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Device'
+            type: array
+        "400":
+          description: Неверный формат параметров
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetDevices
+      tags:
+      - devices
+  /devices/{id}/screenshots:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает последние скриншоты устройства с пагинацией.
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество элементов на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DeviceScreenshot'
+            type: array
+        "400":
+          description: Неверный формат параметров
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: GetDeviceScreenshots
+      tags:
+      - devices
   /devices/stats:
     get:
       consumes:
@@ -258,29 +352,6 @@ paths:
       summary: PingHandler
       tags:
       - ping
-  /v1/analytics/devices:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает массив всех устройств в системе
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Device'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: GetDevices
-      tags:
-      - devices
   /v1/analytics/devices/{id}:
     delete:
       consumes:

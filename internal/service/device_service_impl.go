@@ -14,8 +14,9 @@ func NewDeviceService(deviceRepo repository.DeviceRepository) DeviceService {
 	return &deviceService{deviceRepo: deviceRepo}
 }
 
-func (s *deviceService) GetDevices(ctx context.Context) ([]models.Device, error) {
-	return s.deviceRepo.GetDevices(ctx)
+func (s *deviceService) GetDevices(ctx context.Context, page, limit int) ([]models.Device, error) {
+	offset := (page - 1) * limit
+	return s.deviceRepo.GetDevices(ctx, limit, offset)
 }
 
 func (s *deviceService) GetDeviceByID(ctx context.Context, id int64) (*models.Device, error) {

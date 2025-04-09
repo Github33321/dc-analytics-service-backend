@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"dc-analytics-service-backend/internal/service"
 	"github.com/gin-gonic/gin"
@@ -65,4 +66,48 @@ func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, stats)
+}
+
+// GetDeviceScreenshots godoc
+// @Summary      GetDeviceScreenshots
+// @Description  Возвращает последние скриншоты устройства с пагинацией.
+// @Tags         devices
+// @Accept       json
+// @Produce      json
+// @Param        id    path      int    true  "ID устройства"
+// @Param        page  query     int    false "Номер страницы" default(1)
+// @Param        limit query     int    false "Количество элементов на странице" default(10)
+// @Success      200   {array}   models.DeviceScreenshot
+// @Failure      400   {object}  map[string]string "Неверный формат параметров"
+// @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
+// @Router       /devices/{id}/screenshots [get]
+func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
+	deviceID := c.Param("id")
+	page := 1
+	limit := 10
+
+	if p := c.Query("page"); p != "" {
+		pInt, err := strconv.Atoi(p)
+		if err != nil || pInt < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра page"})
+			return
+		}
+		page = pInt
+	}
+
+	if l := c.Query("limit"); l != "" {
+		lInt, err := strconv.Atoi(l)
+		if err != nil || lInt < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра limit"})
+			return
+		}
+		limit = lInt
+	}
+
+	screenshots, err := h.statsService.GetDeviceScreenshots(c.Request.Context(), deviceID, page, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, screenshots)
 }

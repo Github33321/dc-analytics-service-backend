@@ -10,7 +10,7 @@ import (
 )
 
 type DeviceRepository interface {
-	GetDevices(ctx context.Context) ([]models.Device, error)
+	GetDevices(ctx context.Context, page, limit int) ([]models.Device, error)
 	GetDeviceByID(ctx context.Context, id int64) (*models.Device, error)
 	UpdateDevice(ctx context.Context, device *models.Device) (*models.Device, error)
 	DeleteDevice(ctx context.Context, id int64) error
@@ -25,10 +25,14 @@ func NewDeviceRepository(db *pgxpool.Pool) DeviceRepository {
 	return &deviceRepository{db: db}
 }
 
-func (r *deviceRepository) GetDevices(ctx context.Context) ([]models.Device, error) {
-	query := `SELECT * FROM devices`
+func (r *deviceRepository) GetDevices(ctx context.Context, limit, offset int) ([]models.Device, error) {
+	query := `
+		SELECT * FROM devices 
+		ORDER BY id 
+		LIMIT $1 OFFSET $2
+	`
 	var devices []models.Device
-	if err := pgxscan.Select(ctx, r.db, &devices, query); err != nil {
+	if err := pgxscan.Select(ctx, r.db, &devices, query, limit, offset); err != nil {
 		return nil, err
 	}
 	return devices, nil

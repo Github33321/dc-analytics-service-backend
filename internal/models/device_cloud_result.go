@@ -1,5 +1,6 @@
 package models
 
+// clickhouse
 type DeviceCloudResult struct {
 	ID                  string `json:"_id"`
 	CreatedAt           string `json:"created_at"`

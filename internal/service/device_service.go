@@ -6,7 +6,7 @@ import (
 )
 
 type DeviceService interface {
-	GetDevices(ctx context.Context) ([]models.Device, error)
+	GetDevices(ctx context.Context, page, limit int) ([]models.Device, error)
 	GetDeviceByID(ctx context.Context, id int64) (*models.Device, error)
 	UpdateDevice(ctx context.Context, id int64, req UpdateDeviceRequest) (*models.Device, error)
 	DeleteDevice(ctx context.Context, id int64) error

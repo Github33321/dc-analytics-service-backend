@@ -11,7 +11,10 @@ yarn-error.log*
 # Папки временных файлов
 tmp/
 temp/
-bin/
+/bin/
+*/bin/
+/.idea/
+*/.idea/
 # IDE / редакторы
 .vscode/
 ../.idea/

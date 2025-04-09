@@ -56,5 +56,6 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 
 		secure.GET("/devices/:id/call-stats", h.DeviceStatsHandler.GetCallStats)
 		secure.GET("/devices/stats", h.DeviceHandler.GetDeviceStats)
+		secure.GET("/devices/:id/screenshots", h.DeviceStatsHandler.GetDeviceScreenshots)
 	}
 }

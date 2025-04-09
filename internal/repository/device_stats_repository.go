@@ -9,6 +9,7 @@ import (
 type DeviceStatsRepository interface {
 	GetTaskStats(ctx context.Context, date string) ([]models.TaskStat, error)
 	GetDeviceCallStats(ctx context.Context, deviceID string, date string) (models.DeviceCallStatsResponse, error)
+	GetDeviceScreenshots(ctx context.Context, deviceID string, limit, offset int) ([]models.DeviceScreenshot, error)
 }
 
 type deviceStatsRepo struct {
@@ -155,4 +156,36 @@ func (r *deviceStatsRepo) GetTaskStats(ctx context.Context, date string) ([]mode
 	}
 
 	return stats, nil
+}
+
+func (r *deviceStatsRepo) GetDeviceScreenshots(ctx context.Context, deviceID string, limit, offset int) ([]models.DeviceScreenshot, error) {
+	query := fmt.Sprintf(`
+		SELECT 
+			toString(toDate(parseDateTimeBestEffort(created_at))) AS created_at_str,
+			screenshot
+		FROM device_cloud_webhooks
+		WHERE toString(device_id) = '%s' 
+		  AND screenshot <> ''
+		ORDER BY parseDateTimeBestEffort(created_at) DESC
+		LIMIT %d OFFSET %d
+	`, deviceID, limit, offset)
+
+	rows, err := r.ch.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var screenshots []models.DeviceScreenshot
+	for rows.Next() {
+		var ds models.DeviceScreenshot
+		if err := rows.Scan(&ds.CreatedAt, &ds.Screenshot); err != nil {
+			return nil, err
+		}
+		screenshots = append(screenshots, ds)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return screenshots, nil
 }

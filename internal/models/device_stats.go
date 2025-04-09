@@ -23,3 +23,8 @@ type DeviceStatsResponse struct {
 	PixelCount         int64 `json:"pixel_count"`
 	SmartCallHiyaCount int64 `json:"smart_call_hiya_count"`
 }
+
+type DeviceScreenshot struct {
+	CreatedAt  string `json:"created_at"`
+	Screenshot string `json:"screenshot"`
+}

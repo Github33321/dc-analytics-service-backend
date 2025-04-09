@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// postgres
 type Device struct {
 	ID                int64      `json:"id" db:"id"`
 	SmartCallHiya     int        `json:"smart_call_hiya" db:"smart_call_hiya"`
