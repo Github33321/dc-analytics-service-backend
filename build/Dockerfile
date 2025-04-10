@@ -1,11 +1,16 @@
-FROM golang:1.20-alpine AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /app
+
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 
 COPY . .
+
+
+RUN go mod tidy
+
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dc-analytics-service ./cmd
 
@@ -17,8 +22,7 @@ WORKDIR /app
 
 COPY --from=builder /app/dc-analytics-service .
 
-
-COPY .env .env
+COPY .env .
 
 EXPOSE 7002
 

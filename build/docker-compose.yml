@@ -4,25 +4,14 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: build/Dockerfile
     container_name: dc-analytics-service-backend
     ports:
       - "7002:7002"
     env_file:
       - .env
-    restart: always
-  postgres:
-    image: postgres:latest
-    container_name: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: analytics
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./data/db:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    depends_on:
+      - postgres
     networks:
       - backend-network
     restart: always
