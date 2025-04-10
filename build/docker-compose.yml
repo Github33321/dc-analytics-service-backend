@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dc-analytics-service-backend
+    ports:
+      - "7002:7002"
+    env_file:
+      - .env
+    restart: always
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -11,28 +21,12 @@ services:
     ports:
       - "5432:5432"
     volumes:
-    - ./data/db:/var/lib/postgresql/data
-    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data/db:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - postgres_network
+      - backend-network
     restart: always
-
-
-  backend:
-    build: .
-    container_name: dc-analytics-service-backend
-    env_file:
-      - .env
-    ports:
-      - "7002:7002"
-    networks:
-      - postgres_network
-    depends_on:
-      - postgres
-    restart: always
-
 
 networks:
-  postgres_network:
+  backend-network:
     driver: bridge
-
