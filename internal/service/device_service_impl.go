@@ -14,9 +14,23 @@ func NewDeviceService(deviceRepo repository.DeviceRepository) DeviceService {
 	return &deviceService{deviceRepo: deviceRepo}
 }
 
-func (s *deviceService) GetDevices(ctx context.Context, page, limit int) ([]models.Device, error) {
+func (s *deviceService) GetDevices(ctx context.Context, page, limit int) (models.PaginatedDevices, error) {
 	offset := (page - 1) * limit
-	return s.deviceRepo.GetDevices(ctx, limit, offset)
+	devices, err := s.deviceRepo.GetDevices(ctx, limit, offset)
+	if err != nil {
+		return models.PaginatedDevices{}, err
+	}
+
+	total, err := s.deviceRepo.GetDevicesCount(ctx)
+	if err != nil {
+		return models.PaginatedDevices{}, err
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	return models.PaginatedDevices{
+		Devices:    devices,
+		TotalPages: totalPages,
+	}, nil
 }
 
 func (s *deviceService) GetDeviceByID(ctx context.Context, id int64) (*models.Device, error) {

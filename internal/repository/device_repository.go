@@ -10,11 +10,12 @@ import (
 )
 
 type DeviceRepository interface {
-	GetDevices(ctx context.Context, page, limit int) ([]models.Device, error)
+	GetDevices(ctx context.Context, limit, offset int) ([]models.Device, error)
 	GetDeviceByID(ctx context.Context, id int64) (*models.Device, error)
 	UpdateDevice(ctx context.Context, device *models.Device) (*models.Device, error)
 	DeleteDevice(ctx context.Context, id int64) error
 	GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error)
+	GetDevicesCount(ctx context.Context) (int64, error)
 }
 
 type deviceRepository struct {
@@ -36,6 +37,15 @@ func (r *deviceRepository) GetDevices(ctx context.Context, limit, offset int) ([
 		return nil, err
 	}
 	return devices, nil
+}
+
+func (r *deviceRepository) GetDevicesCount(ctx context.Context) (int64, error) {
+	query := `SELECT count(*) FROM devices`
+	var count int64
+	if err := pgxscan.Get(ctx, r.db, &count, query); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (r *deviceRepository) GetDeviceByID(ctx context.Context, id int64) (*models.Device, error) {

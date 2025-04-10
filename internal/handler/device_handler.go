@@ -15,21 +15,23 @@ type DeviceHandler struct {
 }
 
 func NewDeviceHandler(deviceService service.DeviceService) *DeviceHandler {
-	return &DeviceHandler{DeviceService: deviceService}
+	return &DeviceHandler{
+		DeviceService: deviceService,
+	}
 }
 
 // GetDevices godoc
 // @Summary      GetDevices
-// @Description  Возвращает список устройств. Для пагинации используйте query-параметры page  и limit. Если параметры не указаны, используются значения по умолчанию (page=1, limit=10).
+// @Description  Возвращает список устройств и общее количество устройств (size). Используйте параметры page и limit.
 // @Tags         devices
 // @Accept       json
 // @Produce      json
 // @Param        page  query     int  false  "Номер страницы" default(1)
 // @Param        limit query     int  false  "Количество элементов на страницу" default(10)
-// @Success      200   {array}   models.Device
+// @Success      200   {object}  models.PaginatedDevices
 // @Failure      400   {object}  map[string]string "Неверный формат параметров"
 // @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
-// @Router       /devices [get]
+// @Router       /v1/analytics/devices [get]
 func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	pageStr := c.Query("page")
 	limitStr := c.Query("limit")
@@ -37,28 +39,30 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	page := 1
 	limit := 10
 	var err error
+
 	if pageStr != "" {
 		page, err = strconv.Atoi(pageStr)
 		if err != nil || page < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра page"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
 			return
 		}
 	}
+
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
 		if err != nil || limit < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра limit"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
 			return
 		}
 	}
 
-	devices, err := h.DeviceService.GetDevices(c.Request.Context(), page, limit)
+	response, err := h.DeviceService.GetDevices(c.Request.Context(), page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "InternalServerError"})
 		return
 	}
 
-	c.JSON(http.StatusOK, devices)
+	c.JSON(http.StatusOK, response)
 }
 
 // GetDeviceByID godoc
@@ -167,7 +171,7 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 // @Produce      json
 // @Success      200  {object}  models.DeviceStatsResponse
 // @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
-// @Router       /devices/stats [get]
+// @Router       /v1/analytics/devices/stats [get]
 func (h *DeviceHandler) GetDeviceStats(c *gin.Context) {
 	stats, err := h.DeviceService.GetDeviceStats(c.Request.Context())
 	if err != nil {

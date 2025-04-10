@@ -22,29 +22,28 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.NewConfig()
+	appConfig, err := config.NewConfig()
 	if err != nil {
 		log.Fatal("Ошибка загрузки конфигурации: " + err.Error())
 	}
 
-	logg, err := logger.NewLogger(cfg.LogLevel)
+	logg, err := logger.NewLogger(appConfig.LogLevel)
 	if err != nil {
 		log.Fatal("Ошибка инициализации логгера: " + err.Error())
 	}
 	defer logg.Sync()
-	logg.Sugar().Infof("Логгер инициализирован с уровнем %s", cfg.LogLevel)
+	logg.Sugar().Infof("Логгер инициализирован с уровнем %s", appConfig.LogLevel)
 
 	router := gin.Default()
 
 	// Подключение к PostgreSQL
-	pgDB, err := postgres.OpenDB(ctx, cfg.PostgresDSN)
+	pgDB, err := postgres.OpenDB(ctx, appConfig.PostgresDSN)
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к PostgreSQL: %v", err)
 	}
-
-	if err := postgres.PingDB(ctx, pgDB); err != nil {
-		logg.Sugar().Fatalf("Не удалось проверить соединение с PostgreSQL: %v", err)
-	}
+	//if err := postgres.PingDB(ctx, pgDB); err != nil {
+	//	logg.Sugar().Fatalf("Не удалось проверить соединение с PostgreSQL: %v", err)
+	//}
 	logg.Sugar().Info("Соединение с PostgreSQL установлено")
 
 	userRepo := repository.NewUserRepository(pgDB)
@@ -54,28 +53,28 @@ func main() {
 	deviceService := service.NewDeviceService(deviceRepo)
 
 	// Подключение к ClickHouse
-	chClient, err := clickhouse.NewClient(ctx, cfg.ClickhouseConfig)
+	chClient, err := clickhouse.NewClient(ctx, appConfig.ClickhouseConfig)
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к ClickHouse: %v", err)
 	}
 	logg.Sugar().Info("Соединение с ClickHouse установлено")
 
-	clickhouseRepo := repository.NewClickhouseRepo(chClient.Conn, cfg)
+	clickhouseRepo := repository.NewClickhouseRepo(chClient.Conn, appConfig)
 	clickhouseService := service.NewClickhouseService(clickhouseRepo)
 
 	deviceStatsRepo := repository.NewDeviceStatsRepository(clickhouseRepo)
 	deviceStatsService := service.NewDeviceStatsService(deviceStatsRepo)
 
-	h := handler.NewHandler(userService, deviceService, clickhouseService, deviceStatsService)
-	h.InitRoutes(router, cfg.JWTSecret)
+	h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService)
+	h.InitRoutes(router, appConfig.JWTSecret)
 
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
+		Addr:    ":" + appConfig.Port,
 		Handler: router,
 	}
 
 	go func() {
-		logg.Sugar().Infof("Запуск сервера на порту %s", cfg.Port)
+		logg.Sugar().Infof("Запуск сервера на порту %s", appConfig.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logg.Sugar().Fatalf("Ошибка сервера: %v", err)
 		}

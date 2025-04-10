@@ -28,3 +28,7 @@ type DeviceScreenshot struct {
 	CreatedAt  string `json:"created_at"`
 	Screenshot string `json:"screenshot"`
 }
+type PaginatedDevices struct {
+	Devices    []Device `json:"devices"`
+	TotalPages int      `json:"total_pages"`
+}

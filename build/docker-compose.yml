@@ -17,6 +17,21 @@ services:
       - postgres_network
     restart: always
 
+
+  backend:
+    build: .
+    container_name: dc-analytics-service-backend
+    env_file:
+      - .env
+    ports:
+      - "7002:7002"
+    networks:
+      - postgres_network
+    depends_on:
+      - postgres
+    restart: always
+
+
 networks:
   postgres_network:
     driver: bridge

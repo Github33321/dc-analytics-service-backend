@@ -48,7 +48,7 @@ cd dc-analytics-service-backend
 | `CLICKHOUSE_PASSWORD`| Пароль для ClickHouse                     | 
 | `CLICKHOUSE_DEBUG`   | Режим отладки для ClickHouse              | 
 
-#Запуск
+### Запуск
 ```bash
 go run cmd/main.go
 ```

@@ -18,15 +18,19 @@ func NewDeviceStatsHandler(s service.DeviceStatsService) *DeviceStatsHandler {
 
 // GetCallStats godoc
 // @Summary      GetCallStats
-// @Description  Возвращает общее количество звонков за сегодня или по дате.
+// @Description  Возвращает статистику звонков для указанного устройства. Ответ включает:
+//   - today_calls: количество звонков за сегодня,
+//   - calls_by_day: массив объектов, где каждый объект содержит дату (created_at_str в формате "YYYY-MM-DD") и количество звонков за этот день,
+//   - status_counts: массив объектов, где для каждого из ожидаемых статусов (call_failed, call_mismatch, wait, no_result, success) возвращается агрегированное количество звонков.
+//
+// Если параметр date указан, статистика будет возвращена только для этой даты, иначе агрегируются данные по всем датам.
 // @Tags         devices
 // @Accept       json
 // @Produce      json
 // @Param        id    path      int     true  "ID устройства"
-// @Param        date  query     string  false "Дата в формате YYYY-MM-DD"
-// @Success      200   {object}  models.DeviceCallStatsResponse
-// @Failure      400   {object}  map[string]string "Неверный формат ID"
-// @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
+// @Param        date  query     string  false "Дата для фильтрации (формат YYYY-MM-DD)"
+// @Success      200   {object}  models.DeviceCallStatsResponse  "Агрегированная статистика звонков устройства"
+// @Failure      500   {object}  map[string]string               "Внутренняя ошибка сервера"
 // @Router       /v1/analytics/devices/{id}/call-stats [get]
 func (h *DeviceStatsHandler) GetCallStats(c *gin.Context) {
 	idStr := c.Param("id")

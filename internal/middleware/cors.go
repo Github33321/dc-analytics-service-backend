@@ -3,36 +3,34 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"os"
-	"strings"
 )
 
-var allowedOrigins []string
-
-func init() {
-	allowedOrigins = GetAllowedOrigins()
-}
-
-func GetAllowedOrigins() []string {
-	origins := os.Getenv("ALLOWED_ORIGINS")
-	if origins == "" {
-		return []string{"http://11.111.111.111"}
-	}
-	parts := strings.Split(origins, ",")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
-	}
-	return parts
-}
-
-func isAllowedOrigin(origin string) bool {
-	for _, o := range allowedOrigins {
-		if origin == o {
-			return true
-		}
-	}
-	return false
-}
+// var allowedOrigins []string
+//
+//	func init() {
+//		allowedOrigins = GetAllowedOrigins()
+//	}
+//
+//	func GetAllowedOrigins() []string {
+//		origins := os.Getenv("ALLOWED_ORIGINS")
+//		if origins == "" {
+//			return []string{"http://11.111.111.111"}
+//		}
+//		parts := strings.Split(origins, ",")
+//		for i := range parts {
+//			parts[i] = strings.TrimSpace(parts[i])
+//		}
+//		return parts
+//	}
+//
+//	func isAllowedOrigin(origin string) bool {
+//		for _, o := range allowedOrigins {
+//			if origin == o {
+//				return true
+//			}
+//		}
+//		return false
+//	}
 func DynamicCORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
