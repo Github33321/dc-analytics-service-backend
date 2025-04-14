@@ -16,6 +16,7 @@ type Handler struct {
 	DeviceHandler             *DeviceHandler
 	DeviceCloudWebhookHandler *DeviceCloudWebhookHandler
 	DeviceStatsHandler        *DeviceStatsHandler
+	ServerHandler             *ServerHandler
 }
 
 func NewHandler(
@@ -24,6 +25,7 @@ func NewHandler(
 	deviceService service.DeviceService,
 	clickhouseService service.ClickhouseService,
 	deviceStatsService service.DeviceStatsService,
+	serverService service.ServerService,
 
 ) *Handler {
 	return &Handler{
@@ -32,17 +34,19 @@ func NewHandler(
 		DeviceHandler:             NewDeviceHandler(deviceService),
 		DeviceCloudWebhookHandler: NewDeviceCloudWebhookHandler(clickhouseService),
 		DeviceStatsHandler:        NewDeviceStatsHandler(deviceStatsService),
+		ServerHandler:             NewServerHandler(serverService),
 	}
 }
 
 func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 	router.Use(middleware.DynamicCORSMiddleware())
-	//router.Use(middleware.GlobalErrorHandler(h.Logger))
+	router.Use(GlobalErrorHandler(h.Logger))
 	router.POST("/login", LoginHandler)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	secure := router.Group("/v1/analytics")
 	secure.Use(middleware.JWTMiddleware(jwtSecret))
 	{
+		//postgres
 		secure.GET("/ping", PingHandler)
 
 		secure.GET("/users/:id", h.UserHandler.GetUserByID)
@@ -55,12 +59,15 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 		secure.PATCH("/devices/:id", h.DeviceHandler.UpdateDevice)
 		secure.DELETE("/devices/:id", h.DeviceHandler.DeleteDevice)
 
+		secure.GET("/servers", h.ServerHandler.GetServers)
+		secure.GET("/servers/:id", h.ServerHandler.GetServerByID)
+
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
-
+		//clickhouse
 		secure.GET("/tasks/stats", h.DeviceStatsHandler.GetTaskStats)
-
 		secure.GET("/devices/:id/call-stats", h.DeviceStatsHandler.GetCallStats)
 		secure.GET("/devices/stats", h.DeviceHandler.GetDeviceStats)
 		secure.GET("/devices/:id/screenshots", h.DeviceStatsHandler.GetDeviceScreenshots)
+
 	}
 }

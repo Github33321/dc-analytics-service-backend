@@ -28,7 +28,8 @@ type LoginRequest struct {
 func LoginHandler(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
+		c.Error(err)
 		return
 	}
 
@@ -47,7 +48,8 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	if req.Login != expectedLogin || req.Password != expectedPassword {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные"})
+		//c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные"})
+		c.Error(&customError{Msg: "Неверные учетные данные", Status: http.StatusUnauthorized})
 		return
 	}
 
@@ -59,7 +61,8 @@ func LoginHandler(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(jwtSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
+		c.Error(&customError{Msg: "Ошибка генерации токена", Status: http.StatusInternalServerError})
 		return
 	}
 

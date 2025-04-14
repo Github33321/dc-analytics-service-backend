@@ -41,7 +41,8 @@ func (h *DeviceStatsHandler) GetCallStats(c *gin.Context) {
 
 	stats, err := h.statsService.GetCallStats(c.Request.Context(), deviceID, date)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -66,9 +67,10 @@ func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 
 	stats, err := h.statsService.GetTaskStats(ctx, date)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Ошибка получения данных: " + err.Error(),
-		})
+		//c.JSON(http.StatusInternalServerError, gin.H{
+		//	"error": "Ошибка получения данных: " + err.Error(),
+		//})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)
@@ -96,7 +98,8 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 	if p := c.Query("page"); p != "" {
 		pInt, err := strconv.Atoi(p)
 		if err != nil || pInt < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра page"})
+			//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра page"})
+			c.Error(err)
 			return
 		}
 		page = pInt
@@ -105,7 +108,8 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 	if l := c.Query("limit"); l != "" {
 		lInt, err := strconv.Atoi(l)
 		if err != nil || lInt < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра limit"})
+			//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра limit"})
+			c.Error(err)
 			return
 		}
 		limit = lInt
@@ -113,7 +117,8 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 
 	screenshots, err := h.statsService.GetDeviceScreenshots(c.Request.Context(), deviceID, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, screenshots)

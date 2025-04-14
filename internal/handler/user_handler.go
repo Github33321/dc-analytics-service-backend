@@ -34,12 +34,14 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		c.Error(err)
 		return
 	}
 	user, err := h.UserService.GetUserByID(c, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -72,7 +74,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 	user, err := h.UserService.CreateUser(c, newUser)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -92,7 +95,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	users, err := h.UserService.GetUsers(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -116,17 +120,20 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		c.Error(err)
 		return
 	}
 
 	err = h.UserService.DeleteUser(c.Request.Context(), id)
 	if err != nil {
 		if strings.Contains(err.Error(), "не найден") {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			//c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.Error(err)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Пользователь удален"})

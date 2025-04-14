@@ -58,6 +58,9 @@ func main() {
 	deviceRepo := repository.NewDeviceRepository(pgDB)
 	deviceService := service.NewDeviceService(deviceRepo)
 
+	serverRepo := repository.NewServerRepository(pgDB)
+	serverService := service.NewServerService(serverRepo)
+
 	// Подключение к ClickHouse
 	chClient, err := clickhouse.NewClient(ctx, appConfig.ClickhouseConfig)
 	if err != nil {
@@ -71,7 +74,7 @@ func main() {
 	deviceStatsRepo := repository.NewDeviceStatsRepository(clickhouseRepo)
 	deviceStatsService := service.NewDeviceStatsService(deviceStatsRepo)
 
-	h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService)
+	h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService, serverService)
 	h.InitRoutes(router, appConfig.JWTSecret)
 
 	srv := &http.Server{

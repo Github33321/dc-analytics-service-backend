@@ -151,17 +151,20 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		c.Error(err)
 		return
 	}
 
 	err = h.DeviceService.DeleteDevice(c.Request.Context(), id)
 	if err != nil {
 		if strings.Contains(err.Error(), "не найдено") {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			//c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.Error(err)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Устройство удалено"})
@@ -180,7 +183,8 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 func (h *DeviceHandler) GetDeviceStats(c *gin.Context) {
 	stats, err := h.DeviceService.GetDeviceStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)
