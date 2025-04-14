@@ -33,7 +33,7 @@ func NewConfig() (*Config, error) {
 		LogLevel:  getEnv("LOG_LEVEL", "INFO"),
 		ClickhouseConfig: &ClickhouseConfig{
 			Host:     getEnv("CLICKHOUSE_HOST", "localhost:9000"),
-			Database: getEnv("CLICKHOUSE_DB", "device_cloud_webhooks"),
+			Database: getEnv("CLICKHOUSE_DB", "default"),
 			Username: getEnv("CLICKHOUSE_USERNAME", "default"),
 			Password: getEnv("CLICKHOUSE_PASSWORD", "default"),
 			Debug:    debug == "true",

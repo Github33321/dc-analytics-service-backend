@@ -31,6 +31,7 @@ func NewDeviceHandler(deviceService service.DeviceService) *DeviceHandler {
 // @Success      200   {object}  models.PaginatedDevices
 // @Failure      400   {object}  map[string]string "Неверный формат параметров"
 // @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/devices [get]
 func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	pageStr := c.Query("page")
@@ -76,6 +77,7 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 // @Failure      400  {object}  map[string]string "Неверный формат ID"
 // @Failure      404  {object}  map[string]string "Устройство не найдено"
 // @Failure      500  {object}  map[string]string "Internal Server Error"
+// @Security BearerAuth
 // @Router       /v1/analytics/devices/{id} [get]
 func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 	idStr := c.Param("id")
@@ -107,6 +109,7 @@ func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 // @Success      200  {object}  models.Device
 // @Failure      400  {object}  map[string]string "Неверный формат ID или некорректные данные обновления"
 // @Failure      500  {object}  map[string]string "Internal Server Error"
+// @Security BearerAuth
 // @Router       /v1/analytics/devices/{id} [patch]
 func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 	idStr := c.Param("id")
@@ -142,6 +145,7 @@ func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 // @Failure      400  {object}  map[string]string  "Неверный формат ID"
 // @Failure      404  {object}  map[string]string  "Устройство не найдено"
 // @Failure      500  {object}  map[string]string  "Internal Server Error"
+// @Security BearerAuth
 // @Router       /v1/analytics/devices/{id} [delete]
 func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 	idStr := c.Param("id")
@@ -171,6 +175,7 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 // @Produce      json
 // @Success      200  {object}  models.DeviceStatsResponse
 // @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/devices/stats [get]
 func (h *DeviceHandler) GetDeviceStats(c *gin.Context) {
 	stats, err := h.DeviceService.GetDeviceStats(c.Request.Context())

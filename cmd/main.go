@@ -1,5 +1,14 @@
 package main
 
+// @title DC Analytics Service API
+// @version 1.0
+// @description API для работы с DC Analytics Service.
+// @termsOfService http://swagger.io/terms/
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Введите JWT-токен в формате: "Bearer <ваш_токен>"
 import (
 	"context"
 	_ "dc-analytics-service-backend/docs"
@@ -37,13 +46,10 @@ func main() {
 	router := gin.Default()
 
 	// Подключение к PostgreSQL
-	pgDB, err := postgres.OpenDB(ctx, appConfig.PostgresDSN)
+	pgDB, err := postgres.NewDatabaseClient(ctx, appConfig.PostgresDSN)
 	if err != nil {
 		logg.Sugar().Fatalf("Ошибка подключения к PostgreSQL: %v", err)
 	}
-	//if err := postgres.PingDB(ctx, pgDB); err != nil {
-	//	logg.Sugar().Fatalf("Не удалось проверить соединение с PostgreSQL: %v", err)
-	//}
 	logg.Sugar().Info("Соединение с PostgreSQL установлено")
 
 	userRepo := repository.NewUserRepository(pgDB)

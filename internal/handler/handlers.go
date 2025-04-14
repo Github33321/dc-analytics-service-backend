@@ -37,7 +37,7 @@ func NewHandler(
 
 func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 	router.Use(middleware.DynamicCORSMiddleware())
-	router.Use(middleware.GlobalErrorHandler(h.Logger))
+	//router.Use(middleware.GlobalErrorHandler(h.Logger))
 	router.POST("/login", LoginHandler)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	secure := router.Group("/v1/analytics")

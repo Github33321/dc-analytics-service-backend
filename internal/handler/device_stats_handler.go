@@ -31,6 +31,7 @@ func NewDeviceStatsHandler(s service.DeviceStatsService) *DeviceStatsHandler {
 // @Param        date  query     string  false "Дата для фильтрации (формат YYYY-MM-DD)"
 // @Success      200   {object}  models.DeviceCallStatsResponse  "Агрегированная статистика звонков устройства"
 // @Failure      500   {object}  map[string]string               "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/devices/{id}/call-stats [get]
 func (h *DeviceStatsHandler) GetCallStats(c *gin.Context) {
 	idStr := c.Param("id")
@@ -56,6 +57,7 @@ func (h *DeviceStatsHandler) GetCallStats(c *gin.Context) {
 // @Param        date  query     string  false  "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам."
 // @Success      200   {array}   models.TaskStat  "Массив агрегированных статистических данных"
 // @Failure      500   {object}  map[string]string  "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/tasks/stats [get]
 func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -84,6 +86,7 @@ func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 // @Success      200   {array}   models.DeviceScreenshot
 // @Failure      400   {object}  map[string]string "Неверный формат параметров"
 // @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /devices/{id}/screenshots [get]
 func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 	deviceID := c.Param("id")

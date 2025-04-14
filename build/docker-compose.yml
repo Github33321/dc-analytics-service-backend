@@ -1,9 +1,24 @@
-version: '3.8'
-
 services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: analytics
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./model_images:/app/model_images
+    networks:
+      - backend-network
+    restart: always
+
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: build/Dockerfile
     container_name: dc-analytics-service-backend
     ports:
@@ -19,3 +34,39 @@ services:
 networks:
   backend-network:
     driver: bridge
+#
+#services:
+#  postgres:
+#    image: postgres:latest
+#    container_name: postgres
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#      POSTGRES_DB: analytics
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - ./data/db:/var/lib/postgresql/data
+#      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#    networks:
+#      - backend-network
+#    restart: always
+#
+#  backend:
+#    build:
+#      context: ..
+#      dockerfile: build/Dockerfile
+#    container_name: dc-analytics-service-backend
+#    ports:
+#      - "7002:7002"
+#    env_file:
+#      - .env
+#    depends_on:
+#      - postgres
+#    networks:
+#      - backend-network
+#    restart: always
+#
+#  networks:
+#    backend-network:
+#      driver: bridge

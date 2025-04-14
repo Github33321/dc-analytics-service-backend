@@ -81,7 +81,7 @@ func (r *deviceRepository) UpdateDevice(ctx context.Context, device *models.Devi
 }
 
 func (r *deviceRepository) DeleteDevice(ctx context.Context, id int64) error {
-	query := `DELETE FROM devices WHERE id = $1`
+	query := `UPDATE devices SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1`
 	result, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return err

@@ -28,6 +28,7 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 // @Failure      400  {object}  map[string]string "Неверный формат ID"
 // @Failure      404  {object}  map[string]string "Пользователь не найден"
 // @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
@@ -60,6 +61,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Success      201  {object}  models.User
 // @Failure      400  {object}  map[string]string "Неверные данные для создания пользователя"
 // @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var newUser service.CreateUserRequest
@@ -85,6 +87,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Produce      json
 // @Success      200  {array}   models.User
 // @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	users, err := h.UserService.GetUsers(c)
@@ -107,6 +110,7 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 // @Failure      400  {object}  map[string]string "Неверный формат ID"
 // @Failure      404  {object}  map[string]string "Пользователь не найден"
 // @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Security BearerAuth
 // @Router       /v1/analytics/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")

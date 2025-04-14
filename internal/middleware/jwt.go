@@ -19,13 +19,13 @@ func JWTMiddleware(secretKey string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
 			return
 		}
+
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		fmt.Println("Извлечён токен:", tokenString)
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			fmt.Println("Метод подписи:", token.Method.Alg())
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				fmt.Println("Метод подписи не HMAC")
+				fmt.Println("Метод подписи не HMAC, найден:", token.Method.Alg())
 				return nil, jwt.ErrSignatureInvalid
 			}
 			return []byte(secretKey), nil
@@ -40,6 +40,7 @@ func JWTMiddleware(secretKey string) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
+
 		fmt.Println("Токен валидный, доступ разрешён")
 		c.Next()
 	}

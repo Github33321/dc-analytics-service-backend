@@ -27,4 +27,5 @@ type Device struct {
 	BuildNumber       *string    `json:"build_number" db:"build_number"`
 	BasebandVersion   *string    `json:"baseband_version" db:"baseband_version"`
 	SPSoftwareVersion *string    `json:"sp_software_version" db:"sp_software_version"`
+	ModelImageURL     string     `json:"model_image_url" db:"model_image_url"`
 }

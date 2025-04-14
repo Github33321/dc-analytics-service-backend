@@ -9,106 +9,20 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
+        "termsOfService": "http://swagger.io/terms/",
         "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/devices": {
-            "get": {
-                "description": "Возвращает список устройств. Для пагинации используйте query-параметры page  и limit. Если параметры не указаны, используются значения по умолчанию (page=1, limit=10).",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "devices"
-                ],
-                "summary": "GetDevices",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Номер страницы",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Количество элементов на страницу",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Device"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат параметров",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/devices/stats": {
-            "get": {
-                "description": "Возвращает общее количество устройств, количество устройств с платформой android, ios, Pixel и устройств с smart_call_hiya == 1",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "devices"
-                ],
-                "summary": "GetDeviceStats",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.DeviceStatsResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/devices/{id}/screenshots": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает последние скриншоты устройства с пагинацией.",
                 "consumes": [
                     "application/json"
@@ -238,6 +152,11 @@ const docTemplate = `{
         },
         "/ping": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает \"pong\" если сервер работает",
                 "produces": [
                     "text/plain"
@@ -262,8 +181,112 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/analytics/devices": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список устройств и общее количество устройств (size). Используйте параметры page и limit.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "GetDevices",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Количество элементов на страницу",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.PaginatedDevices"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат параметров",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/devices/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает общее количество устройств, количество устройств с платформой android, ios, Pixel и устройств с smart_call_hiya == 1",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "GetDeviceStats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeviceStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/analytics/devices/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Ищет устройство в базе данных и возвращает, если найдено",
                 "consumes": [
                     "application/json"
@@ -321,6 +344,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет устройство, если оно существует",
                 "consumes": [
                     "application/json"
@@ -381,6 +409,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Обновляет поля устройства, переданные в теле запроса (PATCH)",
                 "consumes": [
                     "application/json"
@@ -440,7 +473,12 @@ const docTemplate = `{
         },
         "/v1/analytics/devices/{id}/call-stats": {
             "get": {
-                "description": "Возвращает общее количество звонков за сегодня или по дате.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает статистику звонков для указанного устройства. Ответ включает:",
                 "consumes": [
                     "application/json"
                 ],
@@ -461,25 +499,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Дата в формате YYYY-MM-DD",
+                        "description": "Дата для фильтрации (формат YYYY-MM-DD)",
                         "name": "date",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Агрегированная статистика звонков устройства",
                         "schema": {
                             "$ref": "#/definitions/models.DeviceCallStatsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат ID",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
                         }
                     },
                     "500": {
@@ -496,6 +525,11 @@ const docTemplate = `{
         },
         "/v1/analytics/tasks/stats": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает статистику звонков, сгруппированную по датам.",
                 "consumes": [
                     "application/json"
@@ -539,6 +573,11 @@ const docTemplate = `{
         },
         "/v1/analytics/users": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает массив пользователей",
                 "consumes": [
                     "application/json"
@@ -572,6 +611,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Принимает данные и создает пользователя в системе",
                 "consumes": [
                     "application/json"
@@ -624,6 +668,11 @@ const docTemplate = `{
         },
         "/v1/analytics/users/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает данные пользователя, если он существует",
                 "consumes": [
                     "application/json"
@@ -681,6 +730,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет пользователя по его ID",
                 "consumes": [
                     "application/json"
@@ -797,6 +851,9 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "model_image_url": {
+                    "type": "string"
+                },
                 "number": {
                     "type": "string"
                 },
@@ -879,6 +936,20 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.PaginatedDevices": {
+            "type": "object",
+            "properties": {
+                "devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Device"
+                    }
+                },
+                "total_pages": {
                     "type": "integer"
                 }
             }
@@ -1022,17 +1093,25 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Введите JWT-токен в формате: \"Bearer \u003cваш_токен\u003e\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "1.0",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "DC Analytics Service API",
+	Description:      "API для работы с DC Analytics Service.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -40,9 +40,10 @@ func LoginHandler(c *gin.Context) {
 	if expectedPassword == "" {
 		expectedPassword = "password"
 	}
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "default_jwt_secret"
+		jwtSecret = "default_super_secret"
 	}
 
 	if req.Login != expectedLogin || req.Password != expectedPassword {
@@ -50,12 +51,12 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"sub": req.Login,
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
-	})
-
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(jwtSecret))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
