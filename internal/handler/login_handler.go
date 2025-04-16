@@ -12,6 +12,10 @@ type LoginRequest struct {
 	Login    string `json:"login" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
+type AuthResponse struct {
+	Token   string `json:"token" example:"eyJhbGciOiJIUz..."`
+	Message string `json:"message" example:"Успешная авторизация"`
+}
 
 // LoginHandler godoc
 // @Summary      LoginHandler
@@ -20,10 +24,10 @@ type LoginRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        loginData  body    LoginRequest  true  "Логин и пароль"
-// @Success      200  {object}  map[string]interface{}  "Возвращает поле token и message"
-// @Failure      400  {object}  map[string]string  "Неверный формат запроса"
-// @Failure      401  {object}  map[string]string  "Неверные учетные данные"
-// @Failure      500  {object}  map[string]string  "Ошибка генерации токена"
+// @Success      200  {object}  AuthResponse  "Возвращает поле token и message"
+// @Failure      400  {object}  models.ErrorResponse   "Неверный формат запроса"
+// @Failure      401  {object}  models.ErrorResponse   "Неверные учетные данные"
+// @Failure      500  {object}  models.ErrorResponse   "Ошибка генерации токена"
 // @Router       /login [post]
 func LoginHandler(c *gin.Context) {
 	var req LoginRequest

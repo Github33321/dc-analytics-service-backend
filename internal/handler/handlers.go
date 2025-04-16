@@ -61,7 +61,8 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 
 		secure.GET("/servers", h.ServerHandler.GetServers)
 		secure.GET("/servers/:id", h.ServerHandler.GetServerByID)
-
+		router.PATCH("/servers/:id", h.ServerHandler.UpdateServer)
+		secure.GET("/servers/:id/devices", h.ServerHandler.GetDevices)
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
 		//clickhouse
 		secure.GET("/tasks/stats", h.DeviceStatsHandler.GetTaskStats)

@@ -29,8 +29,8 @@ func NewDeviceHandler(deviceService service.DeviceService) *DeviceHandler {
 // @Param        page  query     int  false  "Номер страницы" default(1)
 // @Param        limit query     int  false  "Количество элементов на страницу" default(10)
 // @Success      200   {object}  models.PaginatedDevices
-// @Failure      400   {object}  map[string]string "Неверный формат параметров"
-// @Failure      500   {object}  map[string]string "Внутренняя ошибка сервера"
+// @Failure      400   {object}  models.ErrorResponse  "Неверный формат параметров"
+// @Failure      500   {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
 // @Router       /v1/analytics/devices [get]
 func (h *DeviceHandler) GetDevices(c *gin.Context) {
@@ -44,7 +44,8 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	if pageStr != "" {
 		page, err = strconv.Atoi(pageStr)
 		if err != nil || page < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
+			//c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
+			c.Error(err)
 			return
 		}
 	}
@@ -52,14 +53,16 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
 		if err != nil || limit < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
+			//c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
+			c.Error(err)
 			return
 		}
 	}
 
 	response, err := h.DeviceService.GetDevices(c.Request.Context(), page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "InternalServerError"})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": "InternalServerError"})
+		c.Error(err)
 		return
 	}
 
@@ -74,25 +77,28 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "ID устройства"
 // @Success      200  {object}  models.Device
-// @Failure      400  {object}  map[string]string "Неверный формат ID"
-// @Failure      404  {object}  map[string]string "Устройство не найдено"
-// @Failure      500  {object}  map[string]string "Internal Server Error"
+// @Failure      400  {object}  models.ErrorResponse  "Неверный формат ID"
+// @Failure      404  {object}  models.ErrorResponse  "Устройство не найдено"
+// @Failure      500  {object}  models.ErrorResponse  "Internal Server Error"
 // @Security BearerAuth
 // @Router       /v1/analytics/devices/{id} [get]
 func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		c.Error(err)
 		return
 	}
 	device, err := h.DeviceService.GetDeviceByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 	if device == nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Устройство не найдено"})
+		//c.JSON(http.StatusNotFound, gin.H{"message": "Устройство не найдено"})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, device)
@@ -107,27 +113,30 @@ func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 // @Param        id   path      int  true  "ID устройства"
 // @Param        device  body    service.UpdateDeviceRequest  true  "Данные для обновления"
 // @Success      200  {object}  models.Device
-// @Failure      400  {object}  map[string]string "Неверный формат ID или некорректные данные обновления"
-// @Failure      500  {object}  map[string]string "Internal Server Error"
+// @Failure      400  {object}  models.ErrorResponse  "Неверный формат ID или некорректные данные обновления"
+// @Failure      500  {object}  models.ErrorResponse  "Internal Server Error"
 // @Security BearerAuth
 // @Router       /v1/analytics/devices/{id} [patch]
 func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
+		c.Error(err)
 		return
 	}
 
 	var updateReq service.UpdateDeviceRequest
 	if err := c.ShouldBindJSON(&updateReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные для обновления устройства"})
+		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные для обновления устройства"})
+		c.Error(err)
 		return
 	}
 
 	device, err := h.DeviceService.UpdateDevice(c.Request.Context(), id, updateReq)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Error(err)
 		return
 	}
 
@@ -141,10 +150,10 @@ func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "ID устройства"
-// @Success      200  {object}  map[string]string  "Устройство удалено"
-// @Failure      400  {object}  map[string]string  "Неверный формат ID"
-// @Failure      404  {object}  map[string]string  "Устройство не найдено"
-// @Failure      500  {object}  map[string]string  "Internal Server Error"
+// @Success      200  {object}  models.MessageResponse  "Устройство удалено"
+// @Failure      400  {object}  models.ErrorResponse   "Неверный формат ID"
+// @Failure      404  {object}  models.ErrorResponse   "Устройство не найдено"
+// @Failure      500  {object}  models.ErrorResponse   "Internal Server Error"
 // @Security BearerAuth
 // @Router       /v1/analytics/devices/{id} [delete]
 func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
@@ -177,7 +186,7 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  models.DeviceStatsResponse
-// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Failure      500  {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
 // @Router       /v1/analytics/devices/stats [get]
 func (h *DeviceHandler) GetDeviceStats(c *gin.Context) {

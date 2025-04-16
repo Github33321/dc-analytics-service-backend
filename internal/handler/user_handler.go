@@ -25,9 +25,9 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 // @Produce      json
 // @Param        id   path      int  true  "ID пользователя"
 // @Success      200  {object}  models.User
-// @Failure      400  {object}  map[string]string "Неверный формат ID"
-// @Failure      404  {object}  map[string]string "Пользователь не найден"
-// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Failure      400  {object}  models.ErrorResponse  "Неверный формат ID"
+// @Failure      404  {object}  models.ErrorResponse  "Пользователь не найден"
+// @Failure      500  {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
 // @Router       /v1/analytics/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
@@ -61,8 +61,8 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Produce      json
 // @Param        userData  body   service.CreateUserRequest  true  "Данные пользователя"
 // @Success      201  {object}  models.User
-// @Failure      400  {object}  map[string]string "Неверные данные для создания пользователя"
-// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Failure      400  {object}  models.ErrorResponse  "Неверные данные для создания пользователя"
+// @Failure      500  {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
 // @Router       /v1/analytics/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
@@ -89,7 +89,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {array}   models.User
-// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Failure      500  {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
 // @Router       /v1/analytics/users [get]
 func (h *UserHandler) GetUsers(c *gin.Context) {
@@ -111,9 +111,9 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "ID пользователя"
 // @Success      200  {object}  map[string]string "Пользователь удален"
-// @Failure      400  {object}  map[string]string "Неверный формат ID"
-// @Failure      404  {object}  map[string]string "Пользователь не найден"
-// @Failure      500  {object}  map[string]string "Внутренняя ошибка сервера"
+// @Failure      400  {object}  models.ErrorResponse  "Неверный формат ID"
+// @Failure      404  {object}  models.ErrorResponse  "Пользователь не найден"
+// @Failure      500  {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
 // @Router       /v1/analytics/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {

@@ -1,4 +1,13 @@
 definitions:
+  handler.AuthResponse:
+    properties:
+      message:
+        example: Успешная авторизация
+        type: string
+      token:
+        example: eyJhbGciOiJIUz...
+        type: string
+    type: object
   handler.LoginRequest:
     properties:
       login:
@@ -93,6 +102,18 @@ definitions:
       total_count:
         type: integer
     type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        example: error
+        type: string
+    type: object
+  models.MessageResponse:
+    properties:
+      message:
+        example: message
+        type: string
+    type: object
   models.PaginatedDevices:
     properties:
       devices:
@@ -101,6 +122,29 @@ definitions:
         type: array
       total_pages:
         type: integer
+    type: object
+  models.Server:
+    properties:
+      cloud_device_type:
+        type: string
+      cloud_name:
+        type: string
+      cloud_state:
+        type: string
+      cloud_status:
+        type: string
+      cloud_type:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      ip:
+        type: string
+      server_id:
+        type: integer
+      updated_at:
+        type: string
     type: object
   models.StatusCount:
     properties:
@@ -114,6 +158,19 @@ definitions:
       count:
         type: integer
       created_at_str:
+        type: string
+    type: object
+  models.UpdateServerRequest:
+    properties:
+      cloud_name:
+        type: string
+      cloud_state:
+        type: string
+      cloud_status:
+        type: string
+      cloud_type:
+        type: string
+      ip:
         type: string
     type: object
   models.User:
@@ -200,7 +257,220 @@ info:
   title: DC Analytics Service API
   version: "1.0"
 paths:
-  /devices/{id}/screenshots:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Принимает логин и пароль, возвращает JWT-токен при успехе
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: loginData
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Возвращает поле token и message
+          schema:
+            $ref: '#/definitions/handler.AuthResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Неверные учетные данные
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка генерации токена
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: LoginHandler
+      tags:
+      - auth
+  /v1/analytics/devices:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список устройств и общее количество устройств (size).
+        Используйте параметры page и limit.
+      parameters:
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество элементов на страницу
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PaginatedDevices'
+        "400":
+          description: Неверный формат параметров
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetDevices
+      tags:
+      - devices
+  /v1/analytics/devices/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет устройство, если оно существует
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Устройство удалено
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Устройство не найдено
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: DeleteDevice
+      tags:
+      - devices
+    get:
+      consumes:
+      - application/json
+      description: Ищет устройство в базе данных и возвращает, если найдено
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Device'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Устройство не найдено
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetDeviceByID
+      tags:
+      - devices
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет поля устройства, переданные в теле запроса (PATCH)
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: device
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Device'
+        "400":
+          description: Неверный формат ID или некорректные данные обновления
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: UpdateDevice
+      tags:
+      - devices
+  /v1/analytics/devices/{id}/call-stats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику звонков для указанного устройства. Если параметр
+        date не указан, агрегируются данные по всем датам; если указан, то только
+        для указанной даты.
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Дата для фильтрации (формат YYYY-MM-DD)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Агрегированная статистика звонков устройства
+          schema:
+            $ref: '#/definitions/models.DeviceCallStatsResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetCallStats
+      tags:
+      - devices
+  /v1/analytics/devices/{id}/screenshots:
     get:
       consumes:
       - application/json
@@ -233,276 +503,14 @@ paths:
         "400":
           description: Неверный формат параметров
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: GetDeviceScreenshots
-      tags:
-      - devices
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: Принимает логин и пароль, возвращает JWT-токен при успехе
-      parameters:
-      - description: Логин и пароль
-        in: body
-        name: loginData
-        required: true
-        schema:
-          $ref: '#/definitions/handler.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Возвращает поле token и message
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Неверный формат запроса
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Неверные учетные данные
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Ошибка генерации токена
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: LoginHandler
-      tags:
-      - auth
-  /ping:
-    get:
-      description: Возвращает "pong" если сервер работает
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: pong
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - BearerAuth: []
-      summary: PingHandler
-      tags:
-      - ping
-  /v1/analytics/devices:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает список устройств и общее количество устройств (size).
-        Используйте параметры page и limit.
-      parameters:
-      - default: 1
-        description: Номер страницы
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Количество элементов на страницу
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.PaginatedDevices'
-        "400":
-          description: Неверный формат параметров
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: GetDevices
-      tags:
-      - devices
-  /v1/analytics/devices/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Удаляет устройство, если оно существует
-      parameters:
-      - description: ID устройства
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Устройство удалено
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Неверный формат ID
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Устройство не найдено
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: DeleteDevice
-      tags:
-      - devices
-    get:
-      consumes:
-      - application/json
-      description: Ищет устройство в базе данных и возвращает, если найдено
-      parameters:
-      - description: ID устройства
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Device'
-        "400":
-          description: Неверный формат ID
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Устройство не найдено
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: GetDeviceByID
-      tags:
-      - devices
-    patch:
-      consumes:
-      - application/json
-      description: Обновляет поля устройства, переданные в теле запроса (PATCH)
-      parameters:
-      - description: ID устройства
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные для обновления
-        in: body
-        name: device
-        required: true
-        schema:
-          $ref: '#/definitions/service.UpdateDeviceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Device'
-        "400":
-          description: Неверный формат ID или некорректные данные обновления
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: UpdateDevice
-      tags:
-      - devices
-  /v1/analytics/devices/{id}/call-stats:
-    get:
-      consumes:
-      - application/json
-      description: 'Возвращает статистику звонков для указанного устройства. Ответ
-        включает:'
-      parameters:
-      - description: ID устройства
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Дата для фильтрации (формат YYYY-MM-DD)
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Агрегированная статистика звонков устройства
-          schema:
-            $ref: '#/definitions/models.DeviceCallStatsResponse'
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: GetCallStats
       tags:
       - devices
   /v1/analytics/devices/stats:
@@ -521,14 +529,155 @@ paths:
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: GetDeviceStats
       tags:
       - devices
+  /v1/analytics/ping:
+    get:
+      description: Возвращает "pong" если сервер работает
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: PingHandler
+      tags:
+      - ping
+  /v1/analytics/servers:
+    get:
+      description: Возвращает список всех серверов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Server'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetServers
+      tags:
+      - servers
+  /v1/analytics/servers/{id}:
+    get:
+      description: Возвращает сервер по заданному ID
+      parameters:
+      - description: ID сервера
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Server'
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetServerByID
+      tags:
+      - servers
+    put:
+      consumes:
+      - application/json
+      description: Обновляет запись сервера с заданным ID. Передается JSON с полями
+        для обновления.
+      parameters:
+      - description: ID сервера
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления сервера
+        in: body
+        name: server
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateServerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Server'
+        "400":
+          description: Неверный формат запроса или ID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Сервер не найден
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: UpdateServer
+      tags:
+      - servers
+  /v1/analytics/servers/{id}/devices:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список устройств для сервера с указанным ID.
+      parameters:
+      - description: ID сервера
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Device'
+            type: array
+        "400":
+          description: Неверный формат ID
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetDevicesByServerID
+      tags:
+      - servers
   /v1/analytics/tasks/stats:
     get:
       consumes:
@@ -544,7 +693,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Массив агрегированных статистических данных
+          description: Массив статистических данных
           schema:
             items:
               $ref: '#/definitions/models.TaskStat'
@@ -552,9 +701,7 @@ paths:
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: GetTaskStats
@@ -577,9 +724,7 @@ paths:
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: GetUsers
@@ -606,15 +751,11 @@ paths:
         "400":
           description: Неверные данные для создания пользователя
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: CreateUser
@@ -643,21 +784,15 @@ paths:
         "400":
           description: Неверный формат ID
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Пользователь не найден
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: DeleteUser
@@ -683,21 +818,15 @@ paths:
         "400":
           description: Неверный формат ID
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Пользователь не найден
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
           description: Внутренняя ошибка сервера
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
       summary: GetUserByID

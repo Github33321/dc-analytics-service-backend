@@ -15,3 +15,11 @@ type Server struct {
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 	DeletedAt       *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 }
+
+type UpdateServerRequest struct {
+	IP          *string `json:"ip,omitempty"`
+	CloudName   *string `json:"cloud_name,omitempty"`
+	CloudType   *string `json:"cloud_type,omitempty"`
+	CloudStatus *string `json:"cloud_status,omitempty"`
+	CloudState  *string `json:"cloud_state,omitempty"`
+}

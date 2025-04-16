@@ -4,6 +4,7 @@ import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
 	"fmt"
+	"time"
 )
 
 type DeviceStatsRepository interface {
@@ -20,108 +21,17 @@ func NewDeviceStatsRepository(ch IClickhouse) DeviceStatsRepository {
 	return &deviceStatsRepo{ch: ch}
 }
 
-//	func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID string, date string) (models.DeviceCallStatsResponse, error) {
-//		var resp models.DeviceCallStatsResponse
-//
-//		todayQuery := fmt.Sprintf(`
-//			SELECT count(*)
-//			FROM device_cloud_webhooks
-//			WHERE toString(device_id) = '%s'
-//			  AND toDate(parseDateTimeBestEffort(created_at)) = today()
-//		`, deviceID)
-//		rows, err := r.ch.Query(ctx, todayQuery)
-//		if err != nil {
-//			return resp, err
-//		}
-//		if rows.Next() {
-//			if err := rows.Scan(&resp.TodayCalls); err != nil {
-//				rows.Close()
-//				return resp, err
-//			}
-//		}
-//		rows.Close()
-//
-//		var dayQuery string
-//		if date == "" {
-//			dayQuery = fmt.Sprintf(`
-//				SELECT
-//					formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d') AS created_at_str,
-//					count(*) AS count
-//				FROM device_cloud_webhooks
-//				WHERE toString(device_id) = '%s'
-//				GROUP BY formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d')
-//				ORDER BY formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d') ASC
-//			`, deviceID)
-//		} else {
-//			dayQuery = fmt.Sprintf(`
-//				SELECT
-//					formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d') AS created_at_str,
-//					count(*) AS count
-//				FROM device_cloud_webhooks
-//				WHERE toString(device_id) = '%s'
-//				  AND formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d') = '%s'
-//				GROUP BY formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d')
-//				ORDER BY formatDateTime(parseDateTimeBestEffort(created_at), '%%Y-%%m-%%d') ASC
-//			`, deviceID, date)
-//		}
-//		rows, err = r.ch.Query(ctx, dayQuery)
-//		if err != nil {
-//			return resp, err
-//		}
-//		var callsByDay []models.TaskStat
-//		for rows.Next() {
-//			var stat models.TaskStat
-//			if err := rows.Scan(&stat.CreatedAtStr, &stat.Count); err != nil {
-//				rows.Close()
-//				return resp, err
-//			}
-//			callsByDay = append(callsByDay, stat)
-//		}
-//		if err := rows.Err(); err != nil {
-//			rows.Close()
-//			return resp, err
-//		}
-//		rows.Close()
-//		resp.CallsByDay = callsByDay
-//
-//		statusQuery := fmt.Sprintf(`
-//			SELECT status, count(*) AS count
-//			FROM device_cloud_webhooks
-//			WHERE toString(device_id) = '%s'
-//			GROUP BY status
-//			ORDER BY status
-//		`, deviceID)
-//		rows, err = r.ch.Query(ctx, statusQuery)
-//		if err != nil {
-//			return resp, err
-//		}
-//		var statusCounts []models.StatusCount
-//		for rows.Next() {
-//			var sc models.StatusCount
-//			if err := rows.Scan(&sc.Status, &sc.Count); err != nil {
-//				rows.Close()
-//				return resp, err
-//			}
-//			statusCounts = append(statusCounts, sc)
-//		}
-//		if err := rows.Err(); err != nil {
-//			rows.Close()
-//			return resp, err
-//		}
-//		rows.Close()
-//		resp.StatusCounts = statusCounts
-//
-//		return resp, nil
-//	}
 func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID string, date string) (models.DeviceCallStatsResponse, error) {
 	var resp models.DeviceCallStatsResponse
 
+	today := time.Now().UTC().Format("2006-01-02")
+
 	todayQuery := fmt.Sprintf(`
-		SELECT count(*) 
+		SELECT count(*)
 		FROM device_cloud_webhooks
 		WHERE toString(device_id) = '%s'
-		  AND toDate(parseDateTimeBestEffort(created_at)) = today()
-	`, deviceID)
+		  AND created_at_str = '%s'
+	`, deviceID, today)
 
 	rows, err := r.ch.Query(ctx, todayQuery)
 	if err != nil {
@@ -138,26 +48,24 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID strin
 	var dayQuery string
 	if date == "" {
 		dayQuery = fmt.Sprintf(`
-			SELECT 
-				toString(toDate(parseDateTimeBestEffort(created_at))) AS created_at_str, 
-				count(*) AS count
+			SELECT created_at_str, count(*) AS count
 			FROM device_cloud_webhooks
 			WHERE toString(device_id) = '%s'
-			GROUP BY toDate(parseDateTimeBestEffort(created_at))
-			ORDER BY toDate(parseDateTimeBestEffort(created_at)) ASC
+			GROUP BY created_at_str
+			ORDER BY created_at_str DESC
+			LIMIT 31
 		`, deviceID)
 	} else {
 		dayQuery = fmt.Sprintf(`
-			SELECT 
-				toString(toDate(parseDateTimeBestEffort(created_at))) AS created_at_str, 
-				count(*) AS count
+			SELECT created_at_str, count(*) AS count
 			FROM device_cloud_webhooks
 			WHERE toString(device_id) = '%s'
-			  AND toString(toDate(parseDateTimeBestEffort(created_at))) = '%s'
-			GROUP BY toDate(parseDateTimeBestEffort(created_at))
-			ORDER BY toDate(parseDateTimeBestEffort(created_at)) ASC
+			  AND created_at_str = '%s'
+			GROUP BY created_at_str
+			ORDER BY created_at_str DESC
 		`, deviceID, date)
 	}
+
 	rows, err = r.ch.Query(ctx, dayQuery)
 	if err != nil {
 		return resp, err
@@ -179,31 +87,15 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID strin
 	resp.CallsByDay = callsByDay
 
 	statusQuery := fmt.Sprintf(`
-		SELECT status, sum(count) AS count 
-		FROM (
-			SELECT 'success' AS status, sum(multiIf(lower(status) = 'success', 1, 0)) AS count
-			FROM device_cloud_webhooks
-			WHERE toString(device_id) = '%s'
-			UNION ALL
-			SELECT 'call_mismatch', sum(multiIf(lower(status) = 'call_mismatch', 1, 0))
-			FROM device_cloud_webhooks
-			WHERE toString(device_id) = '%s'
-			UNION ALL
-			SELECT 'wait', sum(multiIf(lower(status) = 'wait', 1, 0))
-			FROM device_cloud_webhooks
-			WHERE toString(device_id) = '%s'
-			UNION ALL
-			SELECT 'no_result', sum(multiIf(lower(status) = 'no_result', 1, 0))
-			FROM device_cloud_webhooks
-			WHERE toString(device_id) = '%s'
-			UNION ALL
-			SELECT 'call_failed', sum(multiIf(lower(status) = 'call_failed', 1, 0))
-			FROM device_cloud_webhooks
-			WHERE toString(device_id) = '%s'
-		) AS t
-		GROUP BY status
-		ORDER BY status ASC
-	`, deviceID, deviceID, deviceID, deviceID, deviceID)
+SELECT
+    status,
+    count() AS count
+FROM device_cloud_webhooks
+WHERE device_id      = '%s'
+  AND created_at_str = '%s'
+GROUP BY status
+ORDER BY status
+	`, deviceID, today)
 
 	rows, err = r.ch.Query(ctx, statusQuery)
 	if err != nil {
@@ -224,36 +116,45 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID strin
 	}
 	rows.Close()
 	resp.StatusCounts = statusCounts
-
+	if resp.CallsByDay == nil {
+		resp.CallsByDay = []models.TaskStat{}
+	}
+	if resp.StatusCounts == nil {
+		resp.StatusCounts = []models.StatusCount{}
+	}
 	return resp, nil
 }
 
 func (r *deviceStatsRepo) GetTaskStats(ctx context.Context, date string) ([]models.TaskStat, error) {
 	var query string
+	var args []interface{}
+
 	if date == "" {
 		query = `
             SELECT 
-                toString(toDate(parseDateTimeBestEffort(created_at))) AS created_at_str,
+                created_at_str,
                 count(*) AS count
             FROM device_cloud_webhooks
-            GROUP BY toDate(parseDateTimeBestEffort(created_at))
-            ORDER BY toDate(parseDateTimeBestEffort(created_at)) ASC
+            GROUP BY created_at_str
+            ORDER BY created_at_str DESC
+            LIMIT 31
         `
 	} else {
 		query = `
             SELECT 
-                toString(toDate(parseDateTimeBestEffort(created_at))) AS created_at_str,
+                created_at_str,
                 count(*) AS count
             FROM device_cloud_webhooks
-            WHERE toString(toDate(parseDateTimeBestEffort(created_at))) = '` + date + `'
-            GROUP BY toDate(parseDateTimeBestEffort(created_at))
-            ORDER BY toDate(parseDateTimeBestEffort(created_at)) ASC
+            WHERE created_at_str = ?
+            GROUP BY created_at_str
+            ORDER BY created_at_str ASC
         `
+		args = append(args, date)
 	}
 
-	rows, err := r.ch.Query(ctx, query)
+	rows, err := r.ch.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 	defer rows.Close()
 
@@ -261,12 +162,13 @@ func (r *deviceStatsRepo) GetTaskStats(ctx context.Context, date string) ([]mode
 	for rows.Next() {
 		var st models.TaskStat
 		if err := rows.Scan(&st.CreatedAtStr, &st.Count); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 		stats = append(stats, st)
 	}
+
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rows error: %w", err)
 	}
 
 	return stats, nil

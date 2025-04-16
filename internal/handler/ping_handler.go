@@ -14,7 +14,7 @@ import (
 // @Success 200 {string} string "pong"
 // @Failure 500 {string} string "Internal Server Error"
 // @Security BearerAuth
-// @Router /ping [get]
+// @Router /v1/analytics/ping [get]
 func PingHandler(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
 }

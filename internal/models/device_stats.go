@@ -1,8 +1,18 @@
 package models
 
+import "time"
+
+type ErrorResponse struct {
+	Error string `json:"error" example:"error"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message" example:"message"`
+}
+
 type TaskStat struct {
-	CreatedAtStr string `json:"created_at_str"`
-	Count        uint64 `json:"count"`
+	CreatedAtStr time.Time `json:"created_at_str"`
+	Count        uint64    `json:"count"`
 }
 
 type StatusCount struct {
