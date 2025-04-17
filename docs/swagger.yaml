@@ -649,12 +649,22 @@ paths:
     get:
       consumes:
       - application/json
-      description: Возвращает список устройств для сервера с указанным ID.
+      description: Возвращает устройства сервера по его ID с пагинацией.
       parameters:
       - description: ID сервера
         in: path
         name: id
         required: true
+        type: integer
+      - default: 10
+        description: Размер страницы
+        in: query
+        name: limit
+        type: integer
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
         type: integer
       produces:
       - application/json
@@ -666,7 +676,7 @@ paths:
               $ref: '#/definitions/models.Device'
             type: array
         "400":
-          description: Неверный формат ID
+          description: Неверный формат параметров
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":

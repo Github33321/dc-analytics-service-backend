@@ -14,7 +14,7 @@ type ServerRepository interface {
 	GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, error)
 	GetServerByID(ctx context.Context, id int) (*models.Server, error)
 	UpdateServer(ctx context.Context, id int, req models.UpdateServerRequest) error
-	GetDevicesByServerID(ctx context.Context, serverID int) ([]models.Device, error)
+	GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error)
 }
 
 type serverRepository struct {
@@ -37,7 +37,8 @@ func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int)
             cloud_state,
             created_at,
             updated_at,
-            deleted_at
+            deleted_at,
+            server_image_url
         FROM servers
         ORDER BY server_id
         LIMIT $1 OFFSET $2
@@ -51,7 +52,7 @@ func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int)
 }
 
 func (r *serverRepository) GetServerByID(ctx context.Context, id int) (*models.Server, error) {
-	query := `SELECT server_id, ip, cloud_name, cloud_type, cloud_device_type, cloud_status, cloud_state, created_at, updated_at, deleted_at
+	query := `SELECT server_id, ip, cloud_name, cloud_type, cloud_device_type, cloud_status, cloud_state, created_at, updated_at, deleted_at, server_image_url
 			  FROM servers
 			  WHERE server_id = $1`
 	var server models.Server
@@ -90,10 +91,7 @@ func (r *serverRepository) UpdateServer(ctx context.Context, id int, req models.
 	return nil
 }
 
-func (r *serverRepository) GetDevicesByServerID(
-	ctx context.Context,
-	serverID int,
-) ([]models.Device, error) {
+func (r *serverRepository) GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error) {
 	const query = `
         SELECT
             id, smart_call_hiya, platform, serial, imei,
@@ -105,9 +103,10 @@ func (r *serverRepository) GetDevicesByServerID(
         FROM devices
         WHERE cloud = $1
         ORDER BY id
+        LIMIT $2 OFFSET $3
     `
 	var devices []models.Device
-	if err := pgxscan.Select(ctx, r.db, &devices, query, serverID); err != nil {
+	if err := pgxscan.Select(ctx, r.db, &devices, query, serverID, limit, offset); err != nil {
 		return nil, fmt.Errorf("GetDevicesByServerID: %w", err)
 	}
 	return devices, nil

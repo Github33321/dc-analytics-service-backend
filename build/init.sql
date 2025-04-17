@@ -3014,5 +3014,13 @@ VALUES (1, '192.168.0.207', 'dcmac1', 'device_worker', 'android', 'inactive', 'o
        (10003, '192.168.0.129', 'dcdell5', 'handler', NULL, 'inactive', 'online', '2024-02-22 14:25:22',
         '2024-02-22 14:25:22', NULL);
 
+ALTER TABLE servers
+    ADD COLUMN IF NOT EXISTS server_image_url VARCHAR(255) NOT NULL DEFAULT 'unknown';
+UPDATE servers
+SET server_image_url = CASE
+                           WHEN lower(cloud_name) LIKE '%dcmac%' THEN 'mac.png'
+                           WHEN lower(cloud_name) LIKE '%dcdell%' THEN 'dell.png'
 
-
+                           ELSE server_image_url
+    END
+WHERE server_image_url = 'unknown';

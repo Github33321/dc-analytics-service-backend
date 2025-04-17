@@ -131,32 +131,42 @@ func (h *ServerHandler) UpdateServer(c *gin.Context) {
 
 // GetDevices godoc
 // @Summary     GetDevicesByServerID
-// @Description Возвращает список устройств для сервера с указанным ID.
+// @Description Возвращает устройства сервера по его ID с пагинацией.
 // @Tags        servers
 // @Accept      json
 // @Produce     json
-// @Param       id   path      int  true  "ID сервера"
-// @Success     200  {array}   models.Device
-// @Failure     400  {object}  models.ErrorResponse  "Неверный формат ID"
-// @Failure     500  {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
+// @Param       id     path      int  true   "ID сервера"
+// @Param       limit  query     int  false  "Размер страницы"   default(10)
+// @Param       page   query     int  false  "Номер страницы"    default(1)
+// @Success     200    {array}   models.Device
+// @Failure     400    {object}  models.ErrorResponse  "Неверный формат параметров"
+// @Failure     500    {object}  models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security    BearerAuth
 // @Router      /v1/analytics/servers/{id}/devices [get]
 func (h *ServerHandler) GetDevices(c *gin.Context) {
-	idStr := c.Param("id")
-	serverID, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "invalid server id"})
 		c.Error(err)
 		return
 	}
 
-	devices, err := h.ServerService.GetDevicesByServerID(c.Request.Context(), serverID)
-	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
 		c.Error(err)
 		return
 	}
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.Error(err)
+		return
+	}
+	offset := (page - 1) * limit
 
+	devices, err := h.ServerService.GetDevicesByServerID(c.Request.Context(), id, limit, offset)
+	if err != nil {
+		c.Error(err)
+		return
+	}
 	if devices == nil {
 		devices = []models.Device{}
 	}

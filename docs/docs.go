@@ -623,7 +623,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список устройств для сервера с указанным ID.",
+                "description": "Возвращает устройства сервера по его ID с пагинацией.",
                 "consumes": [
                     "application/json"
                 ],
@@ -641,6 +641,20 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Размер страницы",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -654,7 +668,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Неверный формат ID",
+                        "description": "Неверный формат параметров",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
