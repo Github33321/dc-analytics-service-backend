@@ -42,3 +42,17 @@ type PaginatedDevices struct {
 	Devices    []Device `json:"devices"`
 	TotalPages int      `json:"total_pages"`
 }
+type DeviceCarrierStats struct {
+	DeviceCarrier string `json:"device_carrier"`
+	DeviceCount   uint64 `json:"device_count"`
+}
+
+type CarrierStatsResponse struct {
+	Stats []CarrierStat `json:"stats"`
+}
+
+type CarrierStat struct {
+	Date               time.Time `json:"date"`
+	OriginatingCarrier string    `json:"originating_carrier"`
+	Count              uint64    `json:"count"`
+}

@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"net/http"
-	"strconv"
-
 	"dc-analytics-service-backend/internal/service"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 type DeviceStatsHandler struct {
@@ -48,7 +48,7 @@ func (h *DeviceStatsHandler) GetCallStats(c *gin.Context) {
 // GetTaskStats godoc
 // @Summary      GetTaskStats
 // @Description  Возвращает статистику звонков, сгруппированную по датам.
-// @Tags         tasks
+// @Tags         stats
 // @Accept       json
 // @Produce      json
 // @Param        date  query     string  false  "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам."
@@ -118,4 +118,53 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, screenshots)
+}
+
+// GetDeviceCarrierStats godoc
+// @Summary     GetDeviceCarrierStats
+// @Description Возвращает для каждого оператора общее число устройств.
+// @Tags        stats
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} map[string][]models.DeviceCarrierStats "device_carriers"
+// @Failure     500 {object} models.ErrorResponse            "Внутренняя ошибка сервера"
+// @Security    BearerAuth
+// @Router      /v1/analytics/device-carriers/operator [get]
+func (h *DeviceStatsHandler) GetDeviceCarrierStats(c *gin.Context) {
+	stats, err := h.statsService.GetDeviceCarrierStats(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"device_carriers": stats,
+	})
+}
+
+// GetOriginatingCarrierStats godoc
+// @Summary GetOriginatingCarrierStats
+// @Description Получает статистику проверок по операторам за выбранный период (если дата не указана, возвращает данные за сегодня).
+// @Tags stats
+// @Accept json
+// @Produce json
+// @Param fromDate query string false "Дата начала периода (формат YYYY-MM-DD, по умолчанию — сегодня)"
+// @Success 200 {object} models.CarrierStatsResponse
+// @Failure 400 {object} models.ErrorResponse "Некорректный запрос"
+// @Failure 500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
+// @Security BearerAuth
+// @Router /v1/analytics/device-carriers/originating [get]
+func (h *DeviceStatsHandler) GetOriginatingCarrierStats(c *gin.Context) {
+	fromDate := c.Query("fromDate")
+	if fromDate == "" {
+		fromDate = time.Now().UTC().Format("2006-01-02")
+	}
+
+	resp, err := h.statsService.GetOriginatingCarrierStats(c.Request.Context(), fromDate)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
 }

@@ -61,7 +61,7 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 
 		secure.GET("/servers", h.ServerHandler.GetServers)
 		secure.GET("/servers/:id", h.ServerHandler.GetServerByID)
-		router.PATCH("/servers/:id", h.ServerHandler.UpdateServer)
+		secure.PATCH("/servers/:id", h.ServerHandler.UpdateServer)
 		secure.GET("/servers/:id/devices", h.ServerHandler.GetDevices)
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
 		//clickhouse
@@ -70,5 +70,7 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 		secure.GET("/devices/stats", h.DeviceHandler.GetDeviceStats)
 		secure.GET("/devices/:id/screenshots", h.DeviceStatsHandler.GetDeviceScreenshots)
 
+		secure.GET("/device-carriers/operator", h.DeviceStatsHandler.GetDeviceCarrierStats)
+		secure.GET("/device-carriers/originating", h.DeviceStatsHandler.GetOriginatingCarrierStats)
 	}
 }

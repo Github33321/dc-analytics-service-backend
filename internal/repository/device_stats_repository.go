@@ -11,6 +11,8 @@ type DeviceStatsRepository interface {
 	GetTaskStats(ctx context.Context, date string) ([]models.TaskStat, error)
 	GetDeviceCallStats(ctx context.Context, deviceID string, date string) (models.DeviceCallStatsResponse, error)
 	GetDeviceScreenshots(ctx context.Context, deviceID string, limit, offset int) ([]models.DeviceScreenshot, error)
+	GetDeviceCarrierStats(ctx context.Context) ([]models.DeviceCarrierStats, error)
+	GetOriginatingCarrierStats(ctx context.Context, fromDate time.Time) (models.CarrierStatsResponse, error)
 }
 
 type deviceStatsRepo struct {
@@ -204,4 +206,71 @@ func (r *deviceStatsRepo) GetDeviceScreenshots(ctx context.Context, deviceID str
 		return nil, err
 	}
 	return screenshots, nil
+}
+
+func (r *deviceStatsRepo) GetDeviceCarrierStats(ctx context.Context) ([]models.DeviceCarrierStats, error) {
+	query := `
+		SELECT device_carrier, COUNT(*) as device_count
+		FROM device_cloud_webhooks
+		GROUP BY device_carrier
+		ORDER BY device_count DESC
+	`
+
+	rows, err := r.ch.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error executing query: %w", err)
+	}
+	defer rows.Close()
+
+	var stats []models.DeviceCarrierStats
+	for rows.Next() {
+		var stat models.DeviceCarrierStats
+		if err := rows.Scan(&stat.DeviceCarrier, &stat.DeviceCount); err != nil {
+			return nil, fmt.Errorf("error scanning row: %w", err)
+		}
+		stats = append(stats, stat)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return stats, nil
+}
+
+func (r *deviceStatsRepo) GetOriginatingCarrierStats(ctx context.Context, fromDate time.Time) (models.CarrierStatsResponse, error) {
+	var stats []models.CarrierStat
+
+	query := `
+	SELECT
+		created_at_str,
+		originating_carrier,
+		count() AS count
+	FROM device_cloud_webhooks
+	WHERE created_at_str >= ?
+	GROUP BY created_at_str, originating_carrier
+	ORDER BY created_at_str DESC, count DESC
+	LIMIT 31`
+
+	rows, err := r.ch.Query(ctx, query, fromDate.Format("2006-01-02"))
+	if err != nil {
+		return models.CarrierStatsResponse{}, fmt.Errorf("query error: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stat models.CarrierStat
+		if err := rows.Scan(&stat.Date, &stat.OriginatingCarrier, &stat.Count); err != nil {
+			return models.CarrierStatsResponse{}, fmt.Errorf("scan error: %w", err)
+		}
+		stats = append(stats, stat)
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.CarrierStatsResponse{}, fmt.Errorf("rows error: %w", err)
+	}
+
+	return models.CarrierStatsResponse{
+		Stats: stats,
+	}, nil
 }

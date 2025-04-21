@@ -68,6 +68,94 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/analytics/device-carriers/operator": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает для каждого оператора общее число устройств.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "GetDeviceCarrierStats",
+                "responses": {
+                    "200": {
+                        "description": "device_carriers",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/models.DeviceCarrierStats"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/device-carriers/originating": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получает статистику проверок по операторам за выбранный период (если дата не указана, возвращает данные за сегодня).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "GetOriginatingCarrierStats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата начала периода (формат YYYY-MM-DD, по умолчанию — сегодня)",
+                        "name": "fromDate",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CarrierStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/analytics/devices": {
             "get": {
                 "security": [
@@ -697,7 +785,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "tasks"
+                    "stats"
                 ],
                 "summary": "GetTaskStats",
                 "parameters": [
@@ -954,6 +1042,31 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CarrierStat": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "originating_carrier": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CarrierStatsResponse": {
+            "type": "object",
+            "properties": {
+                "stats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CarrierStat"
+                    }
+                }
+            }
+        },
         "models.Device": {
             "type": "object",
             "properties": {
@@ -1051,6 +1164,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DeviceCarrierStats": {
+            "type": "object",
+            "properties": {
+                "device_carrier": {
+                    "type": "string"
+                },
+                "device_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.DeviceScreenshot": {
             "type": "object",
             "properties": {
@@ -1143,6 +1267,9 @@ const docTemplate = `{
                 },
                 "server_id": {
                     "type": "integer"
+                },
+                "server_image_url": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"

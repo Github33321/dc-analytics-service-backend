@@ -18,6 +18,22 @@ definitions:
     - login
     - password
     type: object
+  models.CarrierStat:
+    properties:
+      count:
+        type: integer
+      date:
+        type: string
+      originating_carrier:
+        type: string
+    type: object
+  models.CarrierStatsResponse:
+    properties:
+      stats:
+        items:
+          $ref: '#/definitions/models.CarrierStat'
+        type: array
+    type: object
   models.Device:
     properties:
       active:
@@ -82,6 +98,13 @@ definitions:
       today_calls:
         type: integer
     type: object
+  models.DeviceCarrierStats:
+    properties:
+      device_carrier:
+        type: string
+      device_count:
+        type: integer
+    type: object
   models.DeviceScreenshot:
     properties:
       created_at:
@@ -143,6 +166,8 @@ definitions:
         type: string
       server_id:
         type: integer
+      server_image_url:
+        type: string
       updated_at:
         type: string
     type: object
@@ -291,6 +316,62 @@ paths:
       summary: LoginHandler
       tags:
       - auth
+  /v1/analytics/device-carriers/operator:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает для каждого оператора общее число устройств.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: device_carriers
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/models.DeviceCarrierStats'
+              type: array
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetDeviceCarrierStats
+      tags:
+      - stats
+  /v1/analytics/device-carriers/originating:
+    get:
+      consumes:
+      - application/json
+      description: Получает статистику проверок по операторам за выбранный период
+        (если дата не указана, возвращает данные за сегодня).
+      parameters:
+      - description: Дата начала периода (формат YYYY-MM-DD, по умолчанию — сегодня)
+        in: query
+        name: fromDate
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.CarrierStatsResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetOriginatingCarrierStats
+      tags:
+      - stats
   /v1/analytics/devices:
     get:
       consumes:
@@ -716,7 +797,7 @@ paths:
       - BearerAuth: []
       summary: GetTaskStats
       tags:
-      - tasks
+      - stats
   /v1/analytics/users:
     get:
       consumes:
