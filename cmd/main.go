@@ -74,8 +74,13 @@ func main() {
 	deviceStatsRepo := repository.NewDeviceStatsRepository(clickhouseRepo)
 	deviceStatsService := service.NewDeviceStatsService(deviceStatsRepo)
 
+	deviceRepos := repository.NewDeviceRepository(pgDB)
+
 	h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService, serverService)
-	h.InitRoutes(router, appConfig.JWTSecret)
+	h.InitRoutes(router, appConfig.JWTSecret, deviceRepos)
+
+	//h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService, serverService)
+	//h.InitRoutes(router, appConfig.JWTSecret)
 
 	srv := &http.Server{
 		Addr:    ":" + appConfig.Port,

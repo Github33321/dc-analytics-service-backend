@@ -68,6 +68,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/analytics/device-carriers/group": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает количество результатов по каждому group_id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "GetDeviceGroupStats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DeviceGroupStats"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/analytics/device-carriers/operator": {
             "get": {
                 "security": [
@@ -149,6 +183,40 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/device-carriers/source": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список источников по source_type_id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "GetSources",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Source"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -417,7 +485,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает статистику звонков для указанного устройства. Если параметр date не указан, агрегируются данные по всем датам; если указан, то только для указанной даты.",
+                "description": "Возвращает:",
                 "consumes": [
                     "application/json"
                 ],
@@ -425,12 +493,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "devices"
+                    "stats"
                 ],
-                "summary": "GetCallStats",
+                "summary": "GetDeviceCallStats",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "ID устройства",
                         "name": "id",
                         "in": "path",
@@ -438,20 +506,26 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Дата для фильтрации (формат YYYY-MM-DD)",
+                        "description": "Дата в формате YYYY-MM-DD (если не указана — последние 31 день)",
                         "name": "date",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Агрегированная статистика звонков устройства",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.DeviceCallStatsResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверный формат запроса",
+                        "description": "Неверный формат параметров",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Устройство не найдено",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -569,7 +643,10 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех серверов",
+                "description": "Возвращает все сервера или постранично с total_pages",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -577,14 +654,25 @@ const docTemplate = `{
                     "servers"
                 ],
                 "summary": "GetServers",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Страница",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество на странице",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Server"
-                            }
+                            "$ref": "#/definitions/models.ServersResponse"
                         }
                     },
                     "500": {
@@ -770,6 +858,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/analytics/tasks/group": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает количество записей с group_id 1 и 2",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "GetTasksReadyCounts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.TasksReadyCount"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/analytics/tasks/stats": {
             "get": {
                 "security": [
@@ -785,7 +907,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "stats"
+                    "tasks"
                 ],
                 "summary": "GetTaskStats",
                 "parameters": [
@@ -804,6 +926,168 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/models.TaskStat"
                             }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/tasks/user-list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "GetDistinctUsers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Дата в формате YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DCUser2"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/tasks/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает всех user и число их проверенных номеров",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "GetCountedUsers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DCUser"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/tasks/users-today": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Для каждого user и group выдаёт сколько раз их проверили сегодня",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "GetTodayStats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.UserGroupStats"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/analytics/tasks/{id}/devices": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает все записи по user_id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "GetByUserID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.DedicatedDevice"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат user_id",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
@@ -1067,6 +1351,42 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DCUser": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.DCUser2": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.DedicatedDevice": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "device_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.Device": {
             "type": "object",
             "properties": {
@@ -1175,6 +1495,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DeviceGroupStats": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "group_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.DeviceScreenshot": {
             "type": "object",
             "properties": {
@@ -1276,6 +1607,37 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ServersResponse": {
+            "type": "object",
+            "properties": {
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Server"
+                    }
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Source": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "models.StatusCount": {
             "type": "object",
             "properties": {
@@ -1295,6 +1657,17 @@ const docTemplate = `{
                 },
                 "created_at_str": {
                     "type": "string"
+                }
+            }
+        },
+        "models.TasksReadyCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "server_group_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -1350,6 +1723,20 @@ const docTemplate = `{
                 },
                 "verified_at": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserGroupStats": {
+            "type": "object",
+            "properties": {
+                "checks_count": {
+                    "type": "integer"
+                },
+                "group_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

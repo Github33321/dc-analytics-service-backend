@@ -56,3 +56,48 @@ type CarrierStat struct {
 	OriginatingCarrier string    `json:"originating_carrier"`
 	Count              uint64    `json:"count"`
 }
+
+type DeviceGroupStats struct {
+	GroupID uint64 `json:"group_id"`
+	Count   uint64 `json:"count"`
+}
+
+// Врушка заглушка
+type Source struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type TasksReadyCount struct {
+	ServerGroupID uint64 `json:"server_group_id"`
+	Count         uint64 `json:"count"`
+}
+
+type DedicatedDevice struct {
+	UserID    uint64    `json:"user_id"`
+	DeviceID  uint64    `json:"device_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type DCUser struct {
+	UserID uint64 `json:"user_id"`
+	Count  uint64 `json:"count"`
+}
+
+type UserGroupStats struct {
+	UserID      uint64 `json:"user_id" db:"user_id"`
+	GroupID     uint64 `json:"group_id" db:"group_id"`
+	ChecksCount uint64 `json:"checks_count" db:"checks_count"`
+}
+
+type UserCheckStats struct {
+	UserID uint64 `json:"user_id" db:"user_id"`
+	Count  uint64 `json:"count"    db:"count"`
+}
+
+type DCUser2 struct {
+	UserID uint64 `json:"user_id" db:"user_id"`
+}

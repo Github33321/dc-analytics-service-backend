@@ -11,7 +11,7 @@ import (
 )
 
 type ServerRepository interface {
-	GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, error)
+	GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, int, error)
 	GetServerByID(ctx context.Context, id int) (*models.Server, error)
 	UpdateServer(ctx context.Context, id int, req models.UpdateServerRequest) error
 	GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error)
@@ -25,30 +25,37 @@ func NewServerRepository(db *pgxpool.Pool) ServerRepository {
 	return &serverRepository{db: db}
 }
 
-func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, error) {
-	const query = `
-        SELECT
-            server_id,
-            ip,
-            cloud_name,
-            cloud_type,
-            cloud_device_type,
-            cloud_status,
-            cloud_state,
-            created_at,
-            updated_at,
-            deleted_at,
-            server_image_url
-        FROM servers
-        ORDER BY server_id
-        LIMIT $1 OFFSET $2
-    `
+func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, int, error) {
+	const countQuery = `SELECT COUNT(*) FROM servers`
+	const dataQuery = `
+		SELECT
+			server_id,
+			ip,
+			cloud_name,
+			cloud_type,
+			cloud_device_type,
+			cloud_status,
+			cloud_state,
+			created_at,
+			updated_at,
+			deleted_at,
+			server_image_url
+		FROM servers
+		ORDER BY server_id
+		LIMIT $1 OFFSET $2
+	`
+
+	var total int
+	if err := r.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("ошибка подсчета серверов: %w", err)
+	}
 
 	var servers []models.Server
-	if err := pgxscan.Select(ctx, r.db, &servers, query, limit, offset); err != nil {
-		return nil, fmt.Errorf("ошибка получения серверов: %w", err)
+	if err := pgxscan.Select(ctx, r.db, &servers, dataQuery, limit, offset); err != nil {
+		return nil, 0, fmt.Errorf("ошибка получения серверов: %w", err)
 	}
-	return servers, nil
+
+	return servers, total, nil
 }
 
 func (r *serverRepository) GetServerByID(ctx context.Context, id int) (*models.Server, error) {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"dc-analytics-service-backend/internal/models"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -22,38 +23,55 @@ func NewServerHandler(s service.ServerService) *ServerHandler {
 
 // GetServers godoc
 // @Summary GetServers
-// @Description Возвращает список всех серверов
+// @Description Возвращает все сервера или постранично с total_pages
 // @Tags servers
+// @Accept json
 // @Produce json
-// @Success 200 {array} models.Server
+// @Param page query int false "Страница"
+// @Param limit query int false "Количество на странице"
+// @Success 200 {object} models.ServersResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /v1/analytics/servers [get]
 func (h *ServerHandler) GetServers(c *gin.Context) {
-	limitStr := c.DefaultQuery("limit", "10")
-	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "")
+	pageStr := c.DefaultQuery("page", "")
+
+	ctx := c.Request.Context()
+
+	if limitStr == "" || pageStr == "" {
+		servers, _, err := h.ServerService.GetAllServers(ctx, 1000, 0)
+		if err != nil {
+			c.Error(err)
+			return
+		}
+		c.JSON(http.StatusOK, models.ServersResponse{Servers: servers})
+		return
+	}
 
 	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 1 {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+	if err != nil || limit <= 0 {
 		c.Error(err)
 		return
 	}
 	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 1 {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
+	if err != nil || page <= 0 {
 		c.Error(err)
 		return
 	}
 	offset := (page - 1) * limit
-	servers, err := h.ServerService.GetAllServers(c.Request.Context(), limit, offset)
+
+	servers, total, err := h.ServerService.GetAllServers(ctx, limit, offset)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		c.Error(err)
 		return
 	}
+	totalPages := int(math.Ceil(float64(total) / float64(limit)))
 
-	c.JSON(http.StatusOK, servers)
+	c.JSON(http.StatusOK, models.ServersResponse{
+		Servers:    servers,
+		TotalPages: totalPages,
+	})
 }
 
 // GetServerByID godoc

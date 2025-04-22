@@ -24,3 +24,8 @@ type UpdateServerRequest struct {
 	CloudStatus *string `json:"cloud_status,omitempty"`
 	CloudState  *string `json:"cloud_state,omitempty"`
 }
+
+type ServersResponse struct {
+	Servers    []Server `json:"servers"`
+	TotalPages int      `json:"total_pages,omitempty"`
+}

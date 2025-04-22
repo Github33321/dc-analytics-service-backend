@@ -2,6 +2,7 @@ package handler
 
 import (
 	"dc-analytics-service-backend/internal/middleware"
+	"dc-analytics-service-backend/internal/repository"
 	"dc-analytics-service-backend/internal/service"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -38,13 +39,15 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
+func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string, deviceRepo repository.DeviceRepository) {
 	router.Use(middleware.DynamicCORSMiddleware())
 	router.Use(GlobalErrorHandler(h.Logger))
 	router.POST("/login", LoginHandler)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	deviceExists := middleware.DeviceExistsMiddleware(deviceRepo)
 	secure := router.Group("/v1/analytics")
 	secure.Use(middleware.JWTMiddleware(jwtSecret))
+
 	{
 		//postgres
 		secure.GET("/ping", PingHandler)
@@ -66,11 +69,20 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string) {
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
 		//clickhouse
 		secure.GET("/tasks/stats", h.DeviceStatsHandler.GetTaskStats)
-		secure.GET("/devices/:id/call-stats", h.DeviceStatsHandler.GetCallStats)
+		secure.GET("/devices/:id/call-stats", deviceExists, h.DeviceStatsHandler.GetDeviceCallStats)
 		secure.GET("/devices/stats", h.DeviceHandler.GetDeviceStats)
 		secure.GET("/devices/:id/screenshots", h.DeviceStatsHandler.GetDeviceScreenshots)
 
 		secure.GET("/device-carriers/operator", h.DeviceStatsHandler.GetDeviceCarrierStats)
 		secure.GET("/device-carriers/originating", h.DeviceStatsHandler.GetOriginatingCarrierStats)
+		secure.GET("/device-carriers/group", h.DeviceStatsHandler.GetDeviceGroupStats)
+		//Иммитация
+		secure.GET("/device-carriers/source", h.DeviceStatsHandler.GetSources)
+
+		secure.GET("/tasks/group", h.DeviceStatsHandler.GetTasksReadyCounts)
+		secure.GET("/tasks/:id/devices", h.DeviceStatsHandler.GetByUserID)
+		secure.GET("/tasks/users", h.DeviceStatsHandler.GetCountedUsers)
+		secure.GET("/tasks/users-today", h.DeviceStatsHandler.GetTodayStats)
+		secure.GET("/tasks/user-list", h.DeviceStatsHandler.GetDistinctUsers)
 	}
 }

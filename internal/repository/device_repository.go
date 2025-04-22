@@ -16,6 +16,7 @@ type DeviceRepository interface {
 	DeleteDevice(ctx context.Context, id int64) error
 	GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error)
 	GetDevicesCount(ctx context.Context) (int64, error)
+	ExistsByID(ctx context.Context, id int64) (bool, error)
 }
 
 type deviceRepository struct {
@@ -110,4 +111,12 @@ func (r *deviceRepository) GetDeviceStats(ctx context.Context) (models.DeviceSta
 		return stats, err
 	}
 	return stats, nil
+}
+
+func (r *deviceRepository) ExistsByID(ctx context.Context, id int64) (bool, error) {
+	const query = `SELECT EXISTS (SELECT 1 FROM devices WHERE id = $1)`
+
+	var exists bool
+	err := r.db.QueryRow(ctx, query, id).Scan(&exists)
+	return exists, err
 }
