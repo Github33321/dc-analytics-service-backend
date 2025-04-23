@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,11 +12,13 @@ import (
 )
 
 type DeviceHandler struct {
+	Logger        *zap.Logger
 	DeviceService service.DeviceService
 }
 
-func NewDeviceHandler(deviceService service.DeviceService) *DeviceHandler {
+func NewDeviceHandler(logger *zap.Logger, deviceService service.DeviceService) *DeviceHandler {
 	return &DeviceHandler{
+		Logger:        logger,
 		DeviceService: deviceService,
 	}
 }
@@ -44,29 +47,24 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	if pageStr != "" {
 		page, err = strconv.Atoi(pageStr)
 		if err != nil || page < 1 {
-			//c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 			return
 		}
 	}
-
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
 		if err != nil || limit < 1 {
-			//c.JSON(http.StatusBadRequest, gin.H{"error": "BadRequest"})
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 			return
 		}
 	}
 
-	response, err := h.DeviceService.GetDevices(c.Request.Context(), page, limit)
+	resp, err := h.DeviceService.GetDevices(c.Request.Context(), page, limit)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": "InternalServerError"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "InternalServerError", err)
 		return
 	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, resp)
 }
 
 // GetDeviceByID godoc
@@ -86,19 +84,16 @@ func (h *DeviceHandler) GetDeviceByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	device, err := h.DeviceService.GetDeviceByID(c.Request.Context(), id)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "InternalServerError", err)
 		return
 	}
 	if device == nil {
-		//c.JSON(http.StatusNotFound, gin.H{"message": "Устройство не найдено"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "Device not found", err)
 		return
 	}
 	c.JSON(http.StatusOK, device)
@@ -121,22 +116,19 @@ func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
 	var updateReq service.UpdateDeviceRequest
 	if err := c.ShouldBindJSON(&updateReq); err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные для обновления устройства"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
 	device, err := h.DeviceService.UpdateDevice(c.Request.Context(), id, updateReq)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "InternalServerError", err)
 		return
 	}
 
@@ -160,20 +152,17 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
 	err = h.DeviceService.DeleteDevice(c.Request.Context(), id)
 	if err != nil {
 		if strings.Contains(err.Error(), "не найдено") {
-			//c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusBadRequest, "Not found", err)
 			return
 		}
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "InternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Устройство удалено"})
@@ -192,8 +181,7 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 func (h *DeviceHandler) GetDeviceStats(c *gin.Context) {
 	stats, err := h.DeviceService.GetDeviceStats(c.Request.Context())
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "InternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)

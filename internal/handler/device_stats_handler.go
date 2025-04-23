@@ -3,17 +3,21 @@ package handler
 import (
 	"dc-analytics-service-backend/internal/service"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 	"time"
 )
 
 type DeviceStatsHandler struct {
+	Logger       *zap.Logger
 	statsService service.DeviceStatsService
 }
 
-func NewDeviceStatsHandler(s service.DeviceStatsService) *DeviceStatsHandler {
-	return &DeviceStatsHandler{statsService: s}
+func NewDeviceStatsHandler(logger *zap.Logger, s service.DeviceStatsService) *DeviceStatsHandler {
+	return &DeviceStatsHandler{
+		Logger:       logger,
+		statsService: s}
 }
 
 // GetDeviceCallStats godoc
@@ -40,7 +44,7 @@ func (h *DeviceStatsHandler) GetDeviceCallStats(c *gin.Context) {
 
 	resp, err := h.statsService.GetDeviceCallStats(c.Request.Context(), deviceID, date)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, resp)
@@ -64,10 +68,7 @@ func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 
 	stats, err := h.statsService.GetTaskStats(ctx, date)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{
-		//	"error": "Ошибка получения данных: " + err.Error(),
-		//})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)
@@ -95,8 +96,7 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 	if p := c.Query("page"); p != "" {
 		pInt, err := strconv.Atoi(p)
 		if err != nil || pInt < 1 {
-			//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра page"})
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 			return
 		}
 		page = pInt
@@ -105,8 +105,7 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 	if l := c.Query("limit"); l != "" {
 		lInt, err := strconv.Atoi(l)
 		if err != nil || lInt < 1 {
-			//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат параметра limit"})
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 			return
 		}
 		limit = lInt
@@ -114,8 +113,7 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 
 	screenshots, err := h.statsService.GetDeviceScreenshots(c.Request.Context(), deviceID, page, limit)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка получения данных: " + err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, screenshots)
@@ -134,7 +132,7 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 func (h *DeviceStatsHandler) GetDeviceCarrierStats(c *gin.Context) {
 	stats, err := h.statsService.GetDeviceCarrierStats(c)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
@@ -163,7 +161,7 @@ func (h *DeviceStatsHandler) GetOriginatingCarrierStats(c *gin.Context) {
 
 	resp, err := h.statsService.GetOriginatingCarrierStats(c.Request.Context(), fromDate)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
@@ -182,7 +180,7 @@ func (h *DeviceStatsHandler) GetOriginatingCarrierStats(c *gin.Context) {
 func (h *DeviceStatsHandler) GetDeviceGroupStats(c *gin.Context) {
 	stats, err := h.statsService.GetDeviceGroupStats(c.Request.Context())
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)
@@ -200,7 +198,7 @@ func (h *DeviceStatsHandler) GetDeviceGroupStats(c *gin.Context) {
 func (h *DeviceStatsHandler) GetSources(c *gin.Context) {
 	sources, err := h.statsService.GetSources(c.Request.Context())
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, sources)
@@ -218,7 +216,7 @@ func (h *DeviceStatsHandler) GetSources(c *gin.Context) {
 func (h *DeviceStatsHandler) GetTasksReadyCounts(c *gin.Context) {
 	stats, err := h.statsService.GetTasksReadyCounts(c.Request.Context())
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)
@@ -239,13 +237,13 @@ func (h *DeviceStatsHandler) GetByUserID(c *gin.Context) {
 	idStr := c.Param("id")
 	uid, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
 	list, err := h.statsService.GetByUserID(c.Request.Context(), uid)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -263,7 +261,7 @@ func (h *DeviceStatsHandler) GetByUserID(c *gin.Context) {
 func (h *DeviceStatsHandler) GetCountedUsers(c *gin.Context) {
 	list, err := h.statsService.GetCountedUsers(c.Request.Context())
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, list)
@@ -281,7 +279,7 @@ func (h *DeviceStatsHandler) GetCountedUsers(c *gin.Context) {
 func (h *DeviceStatsHandler) GetTodayStats(c *gin.Context) {
 	stats, err := h.statsService.TodayStats(c.Request.Context())
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, stats)
@@ -305,7 +303,7 @@ func (h *DeviceStatsHandler) GetDistinctUsers(c *gin.Context) {
 	date := c.Query("date")
 	users, err := h.statsService.GetDistinctUsers(c.Request.Context(), date)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, users)

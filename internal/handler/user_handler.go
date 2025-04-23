@@ -2,6 +2,7 @@ package handler
 
 import (
 	"dc-analytics-service-backend/internal/service"
+	"go.uber.org/zap"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,11 +11,14 @@ import (
 )
 
 type UserHandler struct {
+	Logger      *zap.Logger
 	UserService service.UserService
 }
 
-func NewUserHandler(userService service.UserService) *UserHandler {
-	return &UserHandler{UserService: userService}
+func NewUserHandler(logger *zap.Logger, userService service.UserService) *UserHandler {
+	return &UserHandler{
+		Logger:      logger,
+		UserService: userService}
 }
 
 // GetUserByID godoc
@@ -34,19 +38,17 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "StatusBadRequest", err)
 		return
 	}
 	user, err := h.UserService.GetUserByID(c, id)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
 	if user == nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Пользователь не найден"})
+		handleClientError(c, h.Logger, http.StatusNotFound, "NotFound", err)
 		return
 	}
 
@@ -68,14 +70,13 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var newUser service.CreateUserRequest
 	if err := c.ShouldBindJSON(&newUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверные данные для создания пользователя"})
+		handleClientError(c, h.Logger, http.StatusBadRequest, "StatusBadRequest", err)
 		return
 	}
 
 	user, err := h.UserService.CreateUser(c, newUser)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
@@ -95,8 +96,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 func (h *UserHandler) GetUsers(c *gin.Context) {
 	users, err := h.UserService.GetUsers(c)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
@@ -120,20 +120,17 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "StatusBadRequest", err)
 		return
 	}
 
 	err = h.UserService.DeleteUser(c.Request.Context(), id)
 	if err != nil {
 		if strings.Contains(err.Error(), "не найден") {
-			//c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusNotFound, "NotFound", err)
 			return
 		}
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Пользователь удален"})

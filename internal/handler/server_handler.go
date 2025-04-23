@@ -2,9 +2,11 @@ package handler
 
 import (
 	"dc-analytics-service-backend/internal/models"
+	"go.uber.org/zap"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"dc-analytics-service-backend/internal/service"
 
@@ -12,11 +14,13 @@ import (
 )
 
 type ServerHandler struct {
+	Logger        *zap.Logger
 	ServerService service.ServerService
 }
 
-func NewServerHandler(s service.ServerService) *ServerHandler {
+func NewServerHandler(logger *zap.Logger, s service.ServerService) *ServerHandler {
 	return &ServerHandler{
+		Logger:        logger,
 		ServerService: s,
 	}
 }
@@ -30,6 +34,7 @@ func NewServerHandler(s service.ServerService) *ServerHandler {
 // @Param page query int false "Страница"
 // @Param limit query int false "Количество на странице"
 // @Success 200 {object} models.ServersResponse
+// @Failure 400 {object} models.ErrorResponse
 // @Failure 500 {object} models.ErrorResponse
 // @Security BearerAuth
 // @Router /v1/analytics/servers [get]
@@ -42,7 +47,7 @@ func (h *ServerHandler) GetServers(c *gin.Context) {
 	if limitStr == "" || pageStr == "" {
 		servers, _, err := h.ServerService.GetAllServers(ctx, 1000, 0)
 		if err != nil {
-			c.Error(err)
+			handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 			return
 		}
 		c.JSON(http.StatusOK, models.ServersResponse{Servers: servers})
@@ -51,19 +56,19 @@ func (h *ServerHandler) GetServers(c *gin.Context) {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page <= 0 {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	offset := (page - 1) * limit
 
 	servers, total, err := h.ServerService.GetAllServers(ctx, limit, offset)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
@@ -89,19 +94,17 @@ func (h *ServerHandler) GetServerByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	server, err := h.ServerService.GetServerByID(c.Request.Context(), id)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		c.Error(err)
 		return
 	}
 	if server == nil {
-		//c.JSON(http.StatusNotFound, gin.H{"error": "Сервер не найден"})
-		c.Error(&customError{Msg: "Неверные учетные данные", Status: http.StatusNotFound})
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	c.JSON(http.StatusOK, server)
@@ -125,26 +128,27 @@ func (h *ServerHandler) UpdateServer(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат ID"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
 	var req models.UpdateServerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		//c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
-	updatedServer, err := h.ServerService.UpdateServer(c.Request.Context(), id, req)
+	updated, err := h.ServerService.UpdateServer(c.Request.Context(), id, req)
 	if err != nil {
-		//c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		c.Error(err)
+		if strings.Contains(err.Error(), "не найден") {
+			handleClientError(c, h.Logger, http.StatusNotFound, "NotFound", err)
+			return
+		}
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedServer)
+	c.JSON(http.StatusOK, updated)
 }
 
 // GetDevices godoc
@@ -164,25 +168,25 @@ func (h *ServerHandler) UpdateServer(c *gin.Context) {
 func (h *ServerHandler) GetDevices(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil || limit < 1 {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusBadRequest, "BadRequest", err)
 		return
 	}
 	offset := (page - 1) * limit
 
 	devices, err := h.ServerService.GetDevicesByServerID(c.Request.Context(), id, limit, offset)
 	if err != nil {
-		c.Error(err)
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 	if devices == nil {

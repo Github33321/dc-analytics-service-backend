@@ -20,6 +20,11 @@ type Handler struct {
 	ServerHandler             *ServerHandler
 }
 
+func handleClientError(c *gin.Context, logger *zap.Logger, httpStatus int, clientMsg string, err error) {
+	logger.Error(clientMsg, zap.Error(err))
+	c.JSON(httpStatus, gin.H{"error": clientMsg})
+	c.Abort()
+}
 func NewHandler(
 	logger *zap.Logger,
 	userService service.UserService,
@@ -27,15 +32,14 @@ func NewHandler(
 	clickhouseService service.ClickhouseService,
 	deviceStatsService service.DeviceStatsService,
 	serverService service.ServerService,
-
 ) *Handler {
 	return &Handler{
 		Logger:                    logger,
-		UserHandler:               NewUserHandler(userService),
-		DeviceHandler:             NewDeviceHandler(deviceService),
+		UserHandler:               NewUserHandler(logger, userService),
+		DeviceHandler:             NewDeviceHandler(logger, deviceService),
 		DeviceCloudWebhookHandler: NewDeviceCloudWebhookHandler(clickhouseService),
-		DeviceStatsHandler:        NewDeviceStatsHandler(deviceStatsService),
-		ServerHandler:             NewServerHandler(serverService),
+		DeviceStatsHandler:        NewDeviceStatsHandler(logger, deviceStatsService),
+		ServerHandler:             NewServerHandler(logger, serverService),
 	}
 }
 
@@ -64,7 +68,7 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string, deviceRepo re
 
 		secure.GET("/servers", h.ServerHandler.GetServers)
 		secure.GET("/servers/:id", h.ServerHandler.GetServerByID)
-		secure.PATCH("/servers/:id", h.ServerHandler.UpdateServer)
+		secure.PUT("/servers/:id", h.ServerHandler.UpdateServer)
 		secure.GET("/servers/:id/devices", h.ServerHandler.GetDevices)
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
 		//clickhouse
