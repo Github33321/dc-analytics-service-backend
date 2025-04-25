@@ -50,6 +50,31 @@ func (h *DeviceStatsHandler) GetDeviceCallStats(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+////GetTaskStats godoc
+////@Summary      GetTaskStats
+////@Description  Возвращает статистику звонков, сгруппированную по датам.
+////@Tags         tasks
+////@Accept       json
+////@Produce      json
+////@Param        date  query     string  false  "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам."
+////@Success      200   {array}   models.TaskStat  "Массив статистических данных"
+////@Failure      500   {object}  models.ErrorResponse   "Внутренняя ошибка сервера"
+////@Security BearerAuth
+////@Router       /v1/analytics/tasks/stats [get]
+//
+//func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
+//	ctx := c.Request.Context()
+//
+//	date := c.Query("date")
+//
+//	stats, err := h.statsService.GetTaskStats(ctx, date)
+//	if err != nil {
+//		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
+//		return
+//	}
+//	c.JSON(http.StatusOK, stats)
+//}
+
 // GetTaskStats godoc
 // @Summary      GetTaskStats
 // @Description  Возвращает статистику звонков, сгруппированную по датам.
@@ -57,15 +82,21 @@ func (h *DeviceStatsHandler) GetDeviceCallStats(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        date  query     string  false  "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам."
-// @Success      200   {array}   models.TaskStat  "Массив статистических данных"
-// @Failure      500   {object}  models.ErrorResponse   "Внутренняя ошибка сервера"
-// @Security BearerAuth
+// @Success      200   {array}   models.TaskStat
+// @Failure      400   {object}  models.ErrorResponse  "Неверный формат параметра date"
+// @Failure      500   {object}  models.ErrorResponse  "StatusInternalServerError"
+// @Security     BearerAuth
 // @Router       /v1/analytics/tasks/stats [get]
 func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	date := c.Query("date")
 
+	if date != "" {
+		if _, err := time.Parse("2006-01-02", date); err != nil {
+			handleClientError(c, h.Logger, http.StatusBadRequest, "Invalid date format", err)
+			return
+		}
+	}
 	stats, err := h.statsService.GetTaskStats(ctx, date)
 	if err != nil {
 		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
@@ -130,15 +161,13 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 // @Security    BearerAuth
 // @Router      /v1/analytics/device-carriers/operator [get]
 func (h *DeviceStatsHandler) GetDeviceCarrierStats(c *gin.Context) {
-	stats, err := h.statsService.GetDeviceCarrierStats(c)
+	stats, err := h.statsService.GetDeviceCarrierStats(c.Request.Context())
 	if err != nil {
 		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"device_carriers": stats,
-	})
+	c.JSON(http.StatusOK, gin.H{"device_carriers": stats})
 }
 
 // GetOriginatingCarrierStats godoc
@@ -195,14 +224,14 @@ func (h *DeviceStatsHandler) GetDeviceGroupStats(c *gin.Context) {
 // @Failure     500 {object} models.ErrorResponse
 // @Security    BearerAuth
 // @Router      /v1/analytics/device-carriers/source [get]
-func (h *DeviceStatsHandler) GetSources(c *gin.Context) {
-	sources, err := h.statsService.GetSources(c.Request.Context())
-	if err != nil {
-		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
-		return
-	}
-	c.JSON(http.StatusOK, sources)
-}
+//func (h *DeviceStatsHandler) GetSources(c *gin.Context) {
+//	sources, err := h.statsService.GetSources(c.Request.Context())
+//	if err != nil {
+//		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
+//		return
+//	}
+//	c.JSON(http.StatusOK, sources)
+//}
 
 // GetTasksReadyCounts godoc
 // @Summary     GetTasksReadyCounts
@@ -307,4 +336,27 @@ func (h *DeviceStatsHandler) GetDistinctUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, users)
+}
+
+// GetSourcesStats godoc
+// @Summary     GetSourcesStats
+// @Description Возвращает статистику количества результатов по источникам с подстановкой названий источников из внешнего API.
+// @Tags        stats
+// @Accept      json
+// @Produce     json
+// @Success     200 {array} models.SourceStatResponse
+// @Failure     400 {object} models.ErrorResponse "Неверный формат запроса"
+// @Failure     500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
+// @Security    BearerAuth
+// @Router      /v1/analytics/device-carriers/source [get]
+func (h *DeviceStatsHandler) GetSourcesStats(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	stats, err := h.statsService.GetSourcesStats(ctx)
+	if err != nil {
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "InternalServerError", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
 }

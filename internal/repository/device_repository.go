@@ -3,18 +3,20 @@ package repository
 import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
+	"errors"
 	"fmt"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DeviceRepository interface {
-	GetDevices(ctx context.Context, limit, offset int) ([]models.Device, error)
+	GetDevices(ctx context.Context, limit, offset int) ([]*models.Device, error)
 	GetDeviceByID(ctx context.Context, id int64) (*models.Device, error)
 	UpdateDevice(ctx context.Context, device *models.Device) (*models.Device, error)
 	DeleteDevice(ctx context.Context, id int64) error
-	GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error)
+	GetDeviceStats(ctx context.Context) (*models.DeviceStatsResponse, error)
 	GetDevicesCount(ctx context.Context) (int64, error)
 	ExistsByID(ctx context.Context, id int64) (bool, error)
 }
@@ -27,13 +29,13 @@ func NewDeviceRepository(db *pgxpool.Pool) DeviceRepository {
 	return &deviceRepository{db: db}
 }
 
-func (r *deviceRepository) GetDevices(ctx context.Context, limit, offset int) ([]models.Device, error) {
+func (r *deviceRepository) GetDevices(ctx context.Context, limit, offset int) ([]*models.Device, error) {
 	query := `
 		SELECT * FROM devices 
 		ORDER BY id 
 		LIMIT $1 OFFSET $2
 	`
-	var devices []models.Device
+	var devices []*models.Device
 	if err := pgxscan.Select(ctx, r.db, &devices, query, limit, offset); err != nil {
 		return nil, err
 	}
@@ -53,6 +55,9 @@ func (r *deviceRepository) GetDeviceByID(ctx context.Context, id int64) (*models
 	query := `SELECT * FROM devices WHERE id = $1`
 	var device models.Device
 	if err := pgxscan.Get(ctx, r.db, &device, query, id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &device, nil
@@ -93,7 +98,7 @@ func (r *deviceRepository) DeleteDevice(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *deviceRepository) GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error) {
+func (r *deviceRepository) GetDeviceStats(ctx context.Context) (*models.DeviceStatsResponse, error) {
 	var stats models.DeviceStatsResponse
 
 	query := `
@@ -108,9 +113,9 @@ func (r *deviceRepository) GetDeviceStats(ctx context.Context) (models.DeviceSta
 
 	err := pgxscan.Get(ctx, r.db, &stats, query)
 	if err != nil {
-		return stats, err
+		return nil, err
 	}
-	return stats, nil
+	return &stats, nil
 }
 
 func (r *deviceRepository) ExistsByID(ctx context.Context, id int64) (bool, error) {

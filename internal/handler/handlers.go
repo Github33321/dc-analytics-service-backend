@@ -13,6 +13,7 @@ import (
 
 type Handler struct {
 	Logger                    *zap.Logger
+	JWTSecret                 string
 	UserHandler               *UserHandler
 	DeviceHandler             *DeviceHandler
 	DeviceCloudWebhookHandler *DeviceCloudWebhookHandler
@@ -27,6 +28,7 @@ func handleClientError(c *gin.Context, logger *zap.Logger, httpStatus int, clien
 }
 func NewHandler(
 	logger *zap.Logger,
+	jwtSecret string,
 	userService service.UserService,
 	deviceService service.DeviceService,
 	clickhouseService service.ClickhouseService,
@@ -35,6 +37,7 @@ func NewHandler(
 ) *Handler {
 	return &Handler{
 		Logger:                    logger,
+		JWTSecret:                 jwtSecret,
 		UserHandler:               NewUserHandler(logger, userService),
 		DeviceHandler:             NewDeviceHandler(logger, deviceService),
 		DeviceCloudWebhookHandler: NewDeviceCloudWebhookHandler(clickhouseService),
@@ -43,16 +46,19 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string, deviceRepo repository.DeviceRepository) {
+func (h *Handler) InitRoutes(router *gin.Engine, deviceRepo repository.DeviceRepository) {
 	router.Use(middleware.DynamicCORSMiddleware())
+
 	router.Use(GlobalErrorHandler(h.Logger))
 	router.POST("/login", LoginHandler)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	deviceExists := middleware.DeviceExistsMiddleware(deviceRepo)
 	secure := router.Group("/v1/analytics")
-	secure.Use(middleware.JWTMiddleware(jwtSecret))
-
+	//secure.Use(middleware.JWTMiddleware(jwtSecret))
+	secure.Use(middleware.JWTMiddleware(h.JWTSecret))
 	{
+		//time curl -X GET "http://localhost:7002/v1/analytics/device-carriers/source" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmcm9udGVuZC11c2VyIiwiZXhwIjoxNzQ1NjYyNjcwLCJpYXQiOjE3NDU1NzYyNzB9.Ssv6_u8PyFgMWzvCn6j9cNVGn2HRiGIKe2zNmYnt6W0" -H "Accept: application/json"
+		//curl -X GET 'https://ms1.calleridreputation.com/v1/sources/list' -H "X-Auth-Key: 4f9c5e8f-2c8b-4f7d-91d8-1a2b3c4d5e6f"
 		//postgres
 		secure.GET("/ping", PingHandler)
 
@@ -68,7 +74,7 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string, deviceRepo re
 
 		secure.GET("/servers", h.ServerHandler.GetServers)
 		secure.GET("/servers/:id", h.ServerHandler.GetServerByID)
-		secure.PUT("/servers/:id", h.ServerHandler.UpdateServer)
+		secure.PATCH("/servers/:id", h.ServerHandler.UpdateServer)
 		secure.GET("/servers/:id/devices", h.ServerHandler.GetDevices)
 		//secure.GET("/deviceCloudWebhooks", h.DeviceCloudWebhookHandler.GetDeviceCloudWebhooks)
 		//clickhouse
@@ -81,7 +87,7 @@ func (h *Handler) InitRoutes(router *gin.Engine, jwtSecret string, deviceRepo re
 		secure.GET("/device-carriers/originating", h.DeviceStatsHandler.GetOriginatingCarrierStats)
 		secure.GET("/device-carriers/group", h.DeviceStatsHandler.GetDeviceGroupStats)
 		//Иммитация
-		secure.GET("/device-carriers/source", h.DeviceStatsHandler.GetSources)
+		secure.GET("/device-carriers/source", h.DeviceStatsHandler.GetSourcesStats)
 
 		secure.GET("/tasks/group", h.DeviceStatsHandler.GetTasksReadyCounts)
 		secure.GET("/tasks/:id/devices", h.DeviceStatsHandler.GetByUserID)

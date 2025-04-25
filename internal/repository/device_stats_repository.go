@@ -10,16 +10,17 @@ import (
 
 type DeviceStatsRepository interface {
 	GetTaskStats(ctx context.Context, date string) ([]models.TaskStat, error)
-	GetDeviceCallStats(ctx context.Context, deviceID, date string) (models.DeviceCallStatsResponse, error)
+	GetDeviceCallStats(ctx context.Context, deviceID, date string) (*models.DeviceCallStatsResponse, error)
 	GetDeviceScreenshots(ctx context.Context, deviceID string, limit, offset int) ([]models.DeviceScreenshot, error)
-	GetDeviceCarrierStats(ctx context.Context) ([]models.DeviceCarrierStats, error)
-	GetOriginatingCarrierStats(ctx context.Context, fromDate time.Time) (models.CarrierStatsResponse, error)
-	GetDeviceGroupStats(ctx context.Context) ([]models.DeviceGroupStats, error)
-	GetTasksReadyCounts(ctx context.Context) ([]models.TasksReadyCount, error)
-	GetByUserID(ctx context.Context, userID uint64) ([]models.DedicatedDevice, error)
-	GetCountedUsers(ctx context.Context) ([]models.DCUser, error)
-	GetTodayStats(ctx context.Context) ([]models.UserGroupStats, error)
-	GetDistinctUsers(ctx context.Context, date string) ([]models.DCUser2, error)
+	GetDeviceCarrierStats(ctx context.Context) ([]*models.DeviceCarrierStats, error)
+	GetOriginatingCarrierStats(ctx context.Context, fromDate time.Time) (*models.CarrierStatsResponse, error)
+	GetDeviceGroupStats(ctx context.Context) (*[]models.DeviceGroupStats, error)
+	GetTasksReadyCounts(ctx context.Context) (*[]models.TasksReadyCount, error)
+	GetByUserID(ctx context.Context, userID uint64) (*[]models.DedicatedDevice, error)
+	GetCountedUsers(ctx context.Context) (*[]models.DCUser, error)
+	GetTodayStats(ctx context.Context) (*[]models.UserGroupStats, error)
+	GetDistinctUsers(ctx context.Context, date string) (*[]models.DCUser2, error)
+	GetSourceTypeStats(ctx context.Context) (*[]models.SourceTypeStat, error)
 }
 
 type deviceStatsRepo struct {
@@ -30,12 +31,10 @@ func NewDeviceStatsRepository(ch IClickhouse) DeviceStatsRepository {
 	return &deviceStatsRepo{ch: ch}
 }
 
-func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID, date string) (models.DeviceCallStatsResponse, error) {
-
-	var resp models.DeviceCallStatsResponse
+func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID, date string) (*models.DeviceCallStatsResponse, error) {
+	resp := &models.DeviceCallStatsResponse{}
 
 	today := time.Now().UTC().Format("2006-01-02")
-
 	queryDate := today
 	if date != "" {
 		queryDate = date
@@ -69,22 +68,22 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID, date
 		var q string
 		if date == "" {
 			q = fmt.Sprintf(`
-                   SELECT created_at_str, count() AS count
-                   FROM device_cloud_webhooks
-                   WHERE device_id = %s
-                   GROUP BY created_at_str
-                   ORDER BY created_at_str DESC
-                   LIMIT 31
-               `, deviceID)
+                SELECT created_at_str, count() AS count
+                FROM device_cloud_webhooks
+                WHERE device_id = %s
+                GROUP BY created_at_str
+                ORDER BY created_at_str DESC
+                LIMIT 31
+            `, deviceID)
 		} else {
 			q = fmt.Sprintf(`
-                   SELECT created_at_str, count() AS count
-                   FROM device_cloud_webhooks
-                   WHERE device_id = %s
-                     AND created_at_str = '%s'
-                   GROUP BY created_at_str
-                   ORDER BY created_at_str DESC
-               `, deviceID, queryDate)
+                SELECT created_at_str, count() AS count
+                FROM device_cloud_webhooks
+                WHERE device_id = %s
+                  AND created_at_str = '%s'
+                GROUP BY created_at_str
+                ORDER BY created_at_str DESC
+            `, deviceID, queryDate)
 		}
 
 		rows, err := r.ch.Query(ctx, q)
@@ -101,7 +100,7 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID, date
 			}
 			list = append(list, ts)
 		}
-		resp.CallsByDay = list
+		resp.CallsByDay = &list
 		return nil
 	})
 
@@ -129,19 +128,21 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID, date
 			}
 			stats = append(stats, sc)
 		}
-		resp.StatusCounts = stats
+		resp.StatusCounts = &stats
 		return nil
 	})
 
 	if err := g.Wait(); err != nil {
-		return resp, err
+		return nil, err
 	}
 
 	if resp.CallsByDay == nil {
-		resp.CallsByDay = []models.TaskStat{}
+		empty := []models.TaskStat{}
+		resp.CallsByDay = &empty
 	}
 	if resp.StatusCounts == nil {
-		resp.StatusCounts = []models.StatusCount{}
+		empty := []models.StatusCount{}
+		resp.StatusCounts = &empty
 	}
 
 	return resp, nil
@@ -153,24 +154,24 @@ func (r *deviceStatsRepo) GetTaskStats(ctx context.Context, date string) ([]mode
 
 	if date == "" {
 		query = `
-            SELECT 
-                created_at_str,
-                count(*) AS count
-            FROM device_cloud_webhooks
-            GROUP BY created_at_str
-            ORDER BY created_at_str DESC
-            LIMIT 31
-        `
+           SELECT
+               created_at_str,
+               count(*) AS count
+           FROM device_cloud_webhooks
+           GROUP BY created_at_str
+           ORDER BY created_at_str DESC
+           LIMIT 31
+       `
 	} else {
 		query = `
-            SELECT 
-                created_at_str,
-                count(*) AS count
-            FROM device_cloud_webhooks
-            WHERE created_at_str = ?
-            GROUP BY created_at_str
-            ORDER BY created_at_str ASC
-        `
+           SELECT
+               created_at_str,
+               count(*) AS count
+           FROM device_cloud_webhooks
+           WHERE created_at_str = ?
+           GROUP BY created_at_str
+           ORDER BY created_at_str ASC
+       `
 		args = append(args, date)
 	}
 
@@ -228,7 +229,7 @@ func (r *deviceStatsRepo) GetDeviceScreenshots(ctx context.Context, deviceID str
 	return screenshots, nil
 }
 
-func (r *deviceStatsRepo) GetDeviceCarrierStats(ctx context.Context) ([]models.DeviceCarrierStats, error) {
+func (r *deviceStatsRepo) GetDeviceCarrierStats(ctx context.Context) ([]*models.DeviceCarrierStats, error) {
 	query := `
 		SELECT device_carrier, COUNT(*) as device_count
 		FROM device_cloud_webhooks
@@ -242,9 +243,9 @@ func (r *deviceStatsRepo) GetDeviceCarrierStats(ctx context.Context) ([]models.D
 	}
 	defer rows.Close()
 
-	var stats []models.DeviceCarrierStats
+	var stats []*models.DeviceCarrierStats
 	for rows.Next() {
-		var stat models.DeviceCarrierStats
+		stat := new(models.DeviceCarrierStats)
 		if err := rows.Scan(&stat.DeviceCarrier, &stat.DeviceCount); err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -258,7 +259,7 @@ func (r *deviceStatsRepo) GetDeviceCarrierStats(ctx context.Context) ([]models.D
 	return stats, nil
 }
 
-func (r *deviceStatsRepo) GetOriginatingCarrierStats(ctx context.Context, fromDate time.Time) (models.CarrierStatsResponse, error) {
+func (r *deviceStatsRepo) GetOriginatingCarrierStats(ctx context.Context, fromDate time.Time) (*models.CarrierStatsResponse, error) {
 	var stats []models.CarrierStat
 
 	query := `
@@ -274,27 +275,27 @@ func (r *deviceStatsRepo) GetOriginatingCarrierStats(ctx context.Context, fromDa
 
 	rows, err := r.ch.Query(ctx, query, fromDate.Format("2006-01-02"))
 	if err != nil {
-		return models.CarrierStatsResponse{}, fmt.Errorf("query error: %w", err)
+		return nil, fmt.Errorf("query error: %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var stat models.CarrierStat
 		if err := rows.Scan(&stat.Date, &stat.OriginatingCarrier, &stat.Count); err != nil {
-			return models.CarrierStatsResponse{}, fmt.Errorf("scan error: %w", err)
+			return nil, fmt.Errorf("scan error: %w", err)
 		}
 		stats = append(stats, stat)
 	}
 
 	if err := rows.Err(); err != nil {
-		return models.CarrierStatsResponse{}, fmt.Errorf("rows error: %w", err)
+		return nil, fmt.Errorf("rows error: %w", err)
 	}
 
-	return models.CarrierStatsResponse{
-		Stats: stats,
+	return &models.CarrierStatsResponse{
+		Stats: &stats,
 	}, nil
 }
-func (r *deviceStatsRepo) GetDeviceGroupStats(ctx context.Context) ([]models.DeviceGroupStats, error) {
+func (r *deviceStatsRepo) GetDeviceGroupStats(ctx context.Context) (*[]models.DeviceGroupStats, error) {
 	query := `
 		SELECT group_id, count() AS count 
 		FROM device_cloud_webhooks 
@@ -316,10 +317,15 @@ func (r *deviceStatsRepo) GetDeviceGroupStats(ctx context.Context) ([]models.Dev
 		}
 		result = append(result, stat)
 	}
-	return result, nil
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return &result, nil
 }
 
-func (r *deviceStatsRepo) GetTasksReadyCounts(ctx context.Context) ([]models.TasksReadyCount, error) {
+func (r *deviceStatsRepo) GetTasksReadyCounts(ctx context.Context) (*[]models.TasksReadyCount, error) {
 	const q = `
         SELECT
             server_group_id,
@@ -344,13 +350,15 @@ func (r *deviceStatsRepo) GetTasksReadyCounts(ctx context.Context) ([]models.Tas
 		}
 		res = append(res, t)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows error tasks_ready: %w", err)
 	}
-	return res, nil
+
+	return &res, nil
 }
 
-func (r *deviceStatsRepo) GetByUserID(ctx context.Context, userID uint64) ([]models.DedicatedDevice, error) {
+func (r *deviceStatsRepo) GetByUserID(ctx context.Context, userID uint64) (*[]models.DedicatedDevice, error) {
 	const q = `
         SELECT user_id, device_id, created_at, updated_at
         FROM dedicated_devices
@@ -374,10 +382,11 @@ func (r *deviceStatsRepo) GetByUserID(ctx context.Context, userID uint64) ([]mod
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows error dedicated_devices: %w", err)
 	}
-	return out, nil
+
+	return &out, nil
 }
 
-func (r *deviceStatsRepo) GetCountedUsers(ctx context.Context) ([]models.DCUser, error) {
+func (r *deviceStatsRepo) GetCountedUsers(ctx context.Context) (*[]models.DCUser, error) {
 	const q = `
         SELECT
             user_id,
@@ -403,10 +412,11 @@ func (r *deviceStatsRepo) GetCountedUsers(ctx context.Context) ([]models.DCUser,
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows err dc user: %w", err)
 	}
-	return out, nil
+
+	return &out, nil
 }
 
-func (r *deviceStatsRepo) GetTodayStats(ctx context.Context) ([]models.UserGroupStats, error) {
+func (r *deviceStatsRepo) GetTodayStats(ctx context.Context) (*[]models.UserGroupStats, error) {
 	today := time.Now().UTC().Format("2006-01-02")
 
 	q := fmt.Sprintf(`
@@ -437,10 +447,11 @@ func (r *deviceStatsRepo) GetTodayStats(ctx context.Context) ([]models.UserGroup
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows err today stats: %w", err)
 	}
-	return out, nil
+
+	return &out, nil
 }
 
-func (r *deviceStatsRepo) GetDistinctUsers(ctx context.Context, date string) ([]models.DCUser2, error) {
+func (r *deviceStatsRepo) GetDistinctUsers(ctx context.Context, date string) (*[]models.DCUser2, error) {
 	var q string
 	if date == "" {
 		q = `
@@ -456,6 +467,7 @@ func (r *deviceStatsRepo) GetDistinctUsers(ctx context.Context, date string) ([]
             ORDER BY user_id
         `, date)
 	}
+
 	rows, err := r.ch.Query(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("query distinct users: %w", err)
@@ -473,5 +485,38 @@ func (r *deviceStatsRepo) GetDistinctUsers(ctx context.Context, date string) ([]
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows err distinct users: %w", err)
 	}
-	return out, nil
+
+	return &out, nil
+}
+
+func (r *deviceStatsRepo) GetSourceTypeStats(ctx context.Context) (*[]models.SourceTypeStat, error) {
+	const query = `
+		SELECT 
+			source_type_id, 
+			count() AS count
+		FROM device_cloud_webhooks
+		GROUP BY source_type_id
+		ORDER BY source_type_id
+	`
+
+	rows, err := r.ch.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения статистики по источникам: %w", err)
+	}
+	defer rows.Close()
+
+	var stats []models.SourceTypeStat
+	for rows.Next() {
+		var stat models.SourceTypeStat
+		if err := rows.Scan(&stat.SourceTypeID, &stat.Count); err != nil {
+			return nil, fmt.Errorf("ошибка сканирования строки: %w", err)
+		}
+		stats = append(stats, stat)
+	}
+
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("ошибка в rows: %w", rows.Err())
+	}
+
+	return &stats, nil
 }

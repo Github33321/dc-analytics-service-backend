@@ -8,10 +8,10 @@ import (
 )
 
 type ServerService interface {
-	GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, int, error)
+	GetAllServers(ctx context.Context, limit, offset int) (*[]models.Server, int, error)
 	GetServerByID(ctx context.Context, id int) (*models.Server, error)
 	UpdateServer(ctx context.Context, id int, req models.UpdateServerRequest) (*models.Server, error)
-	GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error)
+	GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) (*[]models.Device, error)
 }
 
 type serverService struct {
@@ -22,7 +22,7 @@ func NewServerService(repo repository.ServerRepository) ServerService {
 	return &serverService{repo: repo}
 }
 
-func (s *serverService) GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, int, error) {
+func (s *serverService) GetAllServers(ctx context.Context, limit, offset int) (*[]models.Server, int, error) {
 	return s.repo.GetAllServers(ctx, limit, offset)
 }
 
@@ -36,6 +36,6 @@ func (s *serverService) UpdateServer(ctx context.Context, id int, req models.Upd
 	return s.repo.GetServerByID(ctx, id)
 }
 
-func (s *serverService) GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error) {
+func (s *serverService) GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) (*[]models.Device, error) {
 	return s.repo.GetDevicesByServerID(ctx, serverID, limit, offset)
 }

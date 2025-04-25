@@ -173,7 +173,7 @@ definitions:
         items:
           $ref: '#/definitions/models.Device'
         type: array
-      total_pages:
+      totalPages:
         type: integer
     type: object
   models.Server:
@@ -210,16 +210,14 @@ definitions:
       total_pages:
         type: integer
     type: object
-  models.Source:
+  models.SourceStatResponse:
     properties:
-      created_at:
-        type: string
-      id:
+      count:
         type: integer
-      name:
+      source_name:
         type: string
-      updated_at:
-        type: string
+      source_type_id:
+        type: integer
     type: object
   models.StatusCount:
     properties:
@@ -461,7 +459,10 @@ paths:
       - stats
   /v1/analytics/device-carriers/source:
     get:
-      description: Возвращает список источников по source_type_id
+      consumes:
+      - application/json
+      description: Возвращает статистику количества результатов по источникам (source_type_id)
+        с подстановкой названий источников из внешнего API.
       produces:
       - application/json
       responses:
@@ -469,15 +470,19 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Source'
+              $ref: '#/definitions/models.SourceStatResponse'
             type: array
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: GetSources
+      summary: GetSourcesStats
       tags:
       - stats
   /v1/analytics/devices:
@@ -959,13 +964,17 @@ paths:
       - application/json
       responses:
         "200":
-          description: Массив статистических данных
+          description: OK
           schema:
             items:
               $ref: '#/definitions/models.TaskStat'
             type: array
+        "400":
+          description: Неверный формат параметра date
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Внутренняя ошибка сервера
+          description: StatusInternalServerError
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       security:

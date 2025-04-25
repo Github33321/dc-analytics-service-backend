@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 
 	"dc-analytics-service-backend/internal/models"
 
@@ -11,10 +13,10 @@ import (
 )
 
 type ServerRepository interface {
-	GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, int, error)
+	GetAllServers(ctx context.Context, limit, offset int) (*[]models.Server, int, error)
 	GetServerByID(ctx context.Context, id int) (*models.Server, error)
 	UpdateServer(ctx context.Context, id int, req models.UpdateServerRequest) error
-	GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error)
+	GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) (*[]models.Device, error)
 }
 
 type serverRepository struct {
@@ -25,7 +27,7 @@ func NewServerRepository(db *pgxpool.Pool) ServerRepository {
 	return &serverRepository{db: db}
 }
 
-func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int) ([]models.Server, int, error) {
+func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int) (*[]models.Server, int, error) {
 	const countQuery = `SELECT COUNT(*) FROM servers`
 	const dataQuery = `
 		SELECT
@@ -52,10 +54,14 @@ func (r *serverRepository) GetAllServers(ctx context.Context, limit, offset int)
 
 	var servers []models.Server
 	if err := pgxscan.Select(ctx, r.db, &servers, dataQuery, limit, offset); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			empty := []models.Server{}
+			return &empty, total, nil
+		}
 		return nil, 0, fmt.Errorf("ошибка получения серверов: %w", err)
 	}
 
-	return servers, total, nil
+	return &servers, total, nil
 }
 
 func (r *serverRepository) GetServerByID(ctx context.Context, id int) (*models.Server, error) {
@@ -64,7 +70,10 @@ func (r *serverRepository) GetServerByID(ctx context.Context, id int) (*models.S
 			  WHERE server_id = $1`
 	var server models.Server
 	if err := pgxscan.Get(ctx, r.db, &server, query, id); err != nil {
-		return nil, fmt.Errorf("сервер с id %d не найден: %w", id, err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("ошибка получения сервера: %w", err)
 	}
 	return &server, nil
 }
@@ -98,7 +107,7 @@ func (r *serverRepository) UpdateServer(ctx context.Context, id int, req models.
 	return nil
 }
 
-func (r *serverRepository) GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) ([]models.Device, error) {
+func (r *serverRepository) GetDevicesByServerID(ctx context.Context, serverID, limit, offset int) (*[]models.Device, error) {
 	const query = `
         SELECT
             id, smart_call_hiya, platform, serial, imei,
@@ -114,7 +123,11 @@ func (r *serverRepository) GetDevicesByServerID(ctx context.Context, serverID, l
     `
 	var devices []models.Device
 	if err := pgxscan.Select(ctx, r.db, &devices, query, serverID, limit, offset); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			empty := []models.Device{}
+			return &empty, nil
+		}
 		return nil, fmt.Errorf("GetDevicesByServerID: %w", err)
 	}
-	return devices, nil
+	return &devices, nil
 }

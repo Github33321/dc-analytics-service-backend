@@ -111,6 +111,6 @@ func (s *deviceService) DeleteDevice(ctx context.Context, id int64) error {
 	return s.deviceRepo.DeleteDevice(ctx, id)
 }
 
-func (s *deviceService) GetDeviceStats(ctx context.Context) (models.DeviceStatsResponse, error) {
+func (s *deviceService) GetDeviceStats(ctx context.Context) (*models.DeviceStatsResponse, error) {
 	return s.deviceRepo.GetDeviceStats(ctx)
 }

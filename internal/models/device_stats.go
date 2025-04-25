@@ -21,9 +21,9 @@ type StatusCount struct {
 }
 
 type DeviceCallStatsResponse struct {
-	TodayCalls   uint64        `json:"today_calls"`
-	CallsByDay   []TaskStat    `json:"calls_by_day"`
-	StatusCounts []StatusCount `json:"status_counts"`
+	TodayCalls   uint64         `json:"today_calls"`
+	CallsByDay   *[]TaskStat    `json:"calls_by_day"`
+	StatusCounts *[]StatusCount `json:"status_counts"`
 }
 
 type DeviceStatsResponse struct {
@@ -39,8 +39,8 @@ type DeviceScreenshot struct {
 	Screenshot string `json:"screenshot"`
 }
 type PaginatedDevices struct {
-	Devices    []Device `json:"devices"`
-	TotalPages int      `json:"total_pages"`
+	Devices    []*Device `json:"devices"`
+	TotalPages int       `json:"totalPages"`
 }
 type DeviceCarrierStats struct {
 	DeviceCarrier string `json:"device_carrier"`
@@ -48,7 +48,7 @@ type DeviceCarrierStats struct {
 }
 
 type CarrierStatsResponse struct {
-	Stats []CarrierStat `json:"stats"`
+	Stats *[]CarrierStat `json:"stats"`
 }
 
 type CarrierStat struct {
@@ -63,12 +63,12 @@ type DeviceGroupStats struct {
 }
 
 // Врушка заглушка
-type Source struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
+//type Source struct {
+//	ID        int    `json:"id"`
+//	Name      string `json:"name"`
+//	CreatedAt string `json:"created_at"`
+//	UpdatedAt string `json:"updated_at"`
+//}
 
 type TasksReadyCount struct {
 	ServerGroupID uint64 `json:"server_group_id"`
@@ -100,4 +100,26 @@ type UserCheckStats struct {
 
 type DCUser2 struct {
 	UserID uint64 `json:"user_id" db:"user_id"`
+}
+
+type Source struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type SourcesResponse struct {
+	Status  string   `json:"status"`
+	Code    int      `json:"code"`
+	Content []Source `json:"content"`
+}
+
+type SourceTypeStat struct {
+	SourceTypeID uint8  `json:"source_type_id"`
+	Count        uint64 `json:"count"`
+}
+
+type SourceStatResponse struct {
+	SourceTypeID int    `json:"source_type_id"`
+	SourceName   string `json:"source_name"`
+	Count        int    `json:"count"`
 }

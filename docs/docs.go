@@ -197,26 +197,35 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список источников по source_type_id",
+                "description": "Возвращает статистику количества результатов по источникам (source_type_id) с подстановкой названий источников из внешнего API.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "stats"
                 ],
-                "summary": "GetSources",
+                "summary": "GetSourcesStats",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Source"
+                                "$ref": "#/definitions/models.SourceStatResponse"
                             }
                         }
                     },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -926,7 +935,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Массив статистических данных",
+                        "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -934,8 +943,14 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "400": {
+                        "description": "Неверный формат параметра date",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
                     "500": {
-                        "description": "Внутренняя ошибка сервера",
+                        "description": "StatusInternalServerError",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -1570,7 +1585,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.Device"
                     }
                 },
-                "total_pages": {
+                "totalPages": {
                     "type": "integer"
                 }
             }
@@ -1627,20 +1642,17 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Source": {
+        "models.SourceStatResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
+                "count": {
                     "type": "integer"
                 },
-                "name": {
+                "source_name": {
                     "type": "string"
                 },
-                "updated_at": {
-                    "type": "string"
+                "source_type_id": {
+                    "type": "integer"
                 }
             }
         },

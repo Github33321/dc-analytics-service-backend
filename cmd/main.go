@@ -72,12 +72,12 @@ func main() {
 	clickhouseService := service.NewClickhouseService(clickhouseRepo)
 
 	deviceStatsRepo := repository.NewDeviceStatsRepository(clickhouseRepo)
-	deviceStatsService := service.NewDeviceStatsService(deviceStatsRepo)
+	deviceStatsService := service.NewDeviceStatsService(deviceStatsRepo, appConfig)
 
 	deviceRepos := repository.NewDeviceRepository(pgDB)
 
-	h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService, serverService)
-	h.InitRoutes(router, appConfig.JWTSecret, deviceRepos)
+	h := handler.NewHandler(logg, appConfig.JWTSecret, userService, deviceService, clickhouseService, deviceStatsService, serverService)
+	h.InitRoutes(router, deviceRepos)
 
 	//h := handler.NewHandler(logg, userService, deviceService, clickhouseService, deviceStatsService, serverService)
 	//h.InitRoutes(router, appConfig.JWTSecret)

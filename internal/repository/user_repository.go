@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
+	"errors"
 	"fmt"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -31,6 +33,9 @@ func (r *userRepository) GetUserByID(ctx context.Context, id int64) (*models.Use
 		WHERE id = $1`
 	var user models.User
 	if err := pgxscan.Get(ctx, r.db, &user, query, id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &user, nil
@@ -56,6 +61,10 @@ func (r *userRepository) GetUsers(ctx context.Context) ([]models.User, error) {
 		FROM users`
 	var users []models.User
 	if err := pgxscan.Select(ctx, r.db, &users, query); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			empty := []models.User{}
+			return empty, nil
+		}
 		return nil, err
 	}
 	return users, nil

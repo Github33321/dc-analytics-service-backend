@@ -50,7 +50,10 @@ func (h *ServerHandler) GetServers(c *gin.Context) {
 			handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 			return
 		}
-		c.JSON(http.StatusOK, models.ServersResponse{Servers: servers})
+		if servers == nil {
+			servers = &[]models.Server{}
+		}
+		c.JSON(http.StatusOK, models.ServersResponse{Servers: *servers})
 		return
 	}
 
@@ -71,10 +74,13 @@ func (h *ServerHandler) GetServers(c *gin.Context) {
 		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
 		return
 	}
+	if servers == nil {
+		servers = &[]models.Server{}
+	}
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
 
 	c.JSON(http.StatusOK, models.ServersResponse{
-		Servers:    servers,
+		Servers:    *servers,
 		TotalPages: totalPages,
 	})
 }
@@ -190,8 +196,8 @@ func (h *ServerHandler) GetDevices(c *gin.Context) {
 		return
 	}
 	if devices == nil {
-		devices = []models.Device{}
+		devices = &[]models.Device{}
 	}
 
-	c.JSON(http.StatusOK, devices)
+	c.JSON(http.StatusOK, *devices)
 }
