@@ -15,6 +15,8 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	GetUsers(ctx context.Context) ([]models.User, error)
 	DeleteUser(ctx context.Context, id int64) error
+	//users stat
+	GetDCUsers(ctx context.Context) (*[]models.DCUserProfile, error)
 }
 
 type userRepository struct {
@@ -80,4 +82,19 @@ func (r *userRepository) DeleteUser(ctx context.Context, id int64) error {
 		return fmt.Errorf("Пользователь с id %d не найден", id)
 	}
 	return nil
+}
+
+func (r *userRepository) GetDCUsers(ctx context.Context) (*[]models.DCUserProfile, error) {
+	query := `
+		SELECT user_id, username, email
+		FROM users_dc
+		ORDER BY user_id
+	`
+
+	var users []models.DCUserProfile
+	if err := pgxscan.Select(ctx, r.db, &users, query); err != nil {
+		return nil, err
+	}
+
+	return &users, nil
 }

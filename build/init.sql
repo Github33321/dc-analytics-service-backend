@@ -3024,3 +3024,20 @@ SET server_image_url = CASE
                            ELSE server_image_url
     END
 WHERE server_image_url = 'unknown';
+
+CREATE TABLE users_dc (
+                          user_id BIGINT PRIMARY KEY,
+                          username VARCHAR(255) NOT NULL,
+                          email VARCHAR(255) NOT NULL
+);
+
+INSERT INTO users_dc (user_id, username, email) VALUES
+                    (13, 'user13', 'user13@example.com'),
+                    (62, 'user62', 'user62@example.com'),
+                    (72, 'user72', 'user72@example.com'),
+                    (82, 'user82', 'user82@example.com'),
+                    (92, 'user92', 'user92@example.com'),
+                    (100, 'user100', 'user100@example.com'),
+                    (101, 'user101', 'user101@example.com'),
+                    (1020, 'user1020', 'user1020@example.com'),
+                    (1071, 'user1071', 'user1071@example.com');

@@ -129,7 +129,7 @@ func (h *ServerHandler) GetServerByID(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse  "Сервер не найден"
 // @Failure 500 {object} models.ErrorResponse  "Внутренняя ошибка сервера"
 // @Security BearerAuth
-// @Router /v1/analytics/servers/{id} [put]
+// @Router /v1/analytics/servers/{id} [patch]
 func (h *ServerHandler) UpdateServer(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

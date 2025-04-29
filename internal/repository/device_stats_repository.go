@@ -4,7 +4,7 @@ import (
 	"context"
 	"dc-analytics-service-backend/internal/models"
 	"fmt"
-	"golang.org/x/sync/errgroup"
+	"strings"
 	"time"
 )
 
@@ -40,110 +40,77 @@ func (r *deviceStatsRepo) GetDeviceCallStats(ctx context.Context, deviceID, date
 		queryDate = date
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	query := fmt.Sprintf(`
+		SELECT
+			'today_calls' AS metric,
+			count(*) AS value
+		FROM device_cloud_webhooks
+		WHERE created_at_str = '%s' AND device_id = %s
 
-	g.Go(func() error {
-		q := fmt.Sprintf(`
-            SELECT count(*)
-            FROM device_cloud_webhooks
-            WHERE device_id = %s
-              AND created_at_str = '%s'
-        `, deviceID, today)
+		UNION ALL
 
-		rows, err := r.ch.Query(ctx, q)
-		if err != nil {
-			return fmt.Errorf("today query: %w", err)
+		SELECT
+			'calls_by_day_' || created_at_str AS metric,
+			count(*) AS value
+		FROM device_cloud_webhooks
+		WHERE created_at_str >= subtractDays('%s', 31)
+		  AND device_id = %s
+		GROUP BY created_at_str
+
+		UNION ALL
+
+		SELECT
+			'status_' || status AS metric,
+			count(*) AS value
+		FROM device_cloud_webhooks
+		WHERE created_at_str = '%s'
+		  AND device_id = %s
+		GROUP BY status
+	`, queryDate, deviceID, queryDate, deviceID, queryDate, deviceID)
+
+	rows, err := r.ch.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("combined query error: %w", err)
+	}
+	defer rows.Close()
+
+	var callsByDay []models.TaskStat
+	var statusCounts []models.StatusCount
+
+	for rows.Next() {
+		var metric string
+		var value uint64 // ← ПРАВИЛЬНО, uint64, не int!
+
+		if err := rows.Scan(&metric, &value); err != nil {
+			return nil, fmt.Errorf("scan combined result: %w", err)
 		}
-		defer rows.Close()
 
-		if rows.Next() {
-			if err := rows.Scan(&resp.TodayCalls); err != nil {
-				return fmt.Errorf("today scan: %w", err)
+		switch {
+		case metric == "today_calls":
+			resp.TodayCalls = value
+
+		case strings.HasPrefix(metric, "calls_by_day_"):
+			dateStr := strings.TrimPrefix(metric, "calls_by_day_")
+			parsedDate, err := time.Parse("2006-01-02", dateStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid date format: %w", err)
 			}
+			callsByDay = append(callsByDay, models.TaskStat{
+				CreatedAtStr: parsedDate,
+				Count:        value,
+			})
+
+		case strings.HasPrefix(metric, "status_"):
+			statusPart := strings.TrimPrefix(metric, "status_")
+			statusCounts = append(statusCounts, models.StatusCount{
+				Status: statusPart,
+				Count:  value,
+			})
 		}
-		return nil
-	})
-
-	g.Go(func() error {
-		var q string
-		if date == "" {
-			q = fmt.Sprintf(`
-                SELECT created_at_str, count() AS count
-                FROM device_cloud_webhooks
-                WHERE device_id = %s
-                GROUP BY created_at_str
-                ORDER BY created_at_str DESC
-                LIMIT 31
-            `, deviceID)
-		} else {
-			q = fmt.Sprintf(`
-                SELECT created_at_str, count() AS count
-                FROM device_cloud_webhooks
-                WHERE device_id = %s
-                  AND created_at_str = '%s'
-                GROUP BY created_at_str
-                ORDER BY created_at_str DESC
-            `, deviceID, queryDate)
-		}
-
-		rows, err := r.ch.Query(ctx, q)
-		if err != nil {
-			return fmt.Errorf("day query: %w", err)
-		}
-		defer rows.Close()
-
-		var list []models.TaskStat
-		for rows.Next() {
-			var ts models.TaskStat
-			if err := rows.Scan(&ts.CreatedAtStr, &ts.Count); err != nil {
-				return fmt.Errorf("day scan: %w", err)
-			}
-			list = append(list, ts)
-		}
-		resp.CallsByDay = &list
-		return nil
-	})
-
-	g.Go(func() error {
-		q := fmt.Sprintf(`
-            SELECT status, count() AS count
-            FROM device_cloud_webhooks
-            WHERE device_id = %s
-              AND created_at_str = '%s'
-            GROUP BY status
-            ORDER BY status
-        `, deviceID, today)
-
-		rows, err := r.ch.Query(ctx, q)
-		if err != nil {
-			return fmt.Errorf("status query: %w", err)
-		}
-		defer rows.Close()
-
-		var stats []models.StatusCount
-		for rows.Next() {
-			var sc models.StatusCount
-			if err := rows.Scan(&sc.Status, &sc.Count); err != nil {
-				return fmt.Errorf("status scan: %w", err)
-			}
-			stats = append(stats, sc)
-		}
-		resp.StatusCounts = &stats
-		return nil
-	})
-
-	if err := g.Wait(); err != nil {
-		return nil, err
 	}
 
-	if resp.CallsByDay == nil {
-		empty := []models.TaskStat{}
-		resp.CallsByDay = &empty
-	}
-	if resp.StatusCounts == nil {
-		empty := []models.StatusCount{}
-		resp.StatusCounts = &empty
-	}
+	resp.CallsByDay = &callsByDay
+	resp.StatusCounts = &statusCounts
 
 	return resp, nil
 }
@@ -231,29 +198,33 @@ func (r *deviceStatsRepo) GetDeviceScreenshots(ctx context.Context, deviceID str
 
 func (r *deviceStatsRepo) GetDeviceCarrierStats(ctx context.Context) ([]*models.DeviceCarrierStats, error) {
 	query := `
-		SELECT device_carrier, COUNT(*) as device_count
+		SELECT 
+		    device_carrier,
+		    lower(platform) AS platform,
+		    count(*) AS device_count
 		FROM device_cloud_webhooks
-		GROUP BY device_carrier
-		ORDER BY device_count DESC
+		WHERE lower(platform) IN ('android', 'ios')
+		GROUP BY device_carrier, platform
+		ORDER BY device_carrier, platform
 	`
 
 	rows, err := r.ch.Query(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("error executing query: %w", err)
+		return nil, fmt.Errorf("error executing platform query: %w", err)
 	}
 	defer rows.Close()
 
 	var stats []*models.DeviceCarrierStats
 	for rows.Next() {
 		stat := new(models.DeviceCarrierStats)
-		if err := rows.Scan(&stat.DeviceCarrier, &stat.DeviceCount); err != nil {
-			return nil, fmt.Errorf("error scanning row: %w", err)
+		if err := rows.Scan(&stat.DeviceCarrier, &stat.Platform, &stat.DeviceCount); err != nil {
+			return nil, fmt.Errorf("error scanning platform row: %w", err)
 		}
 		stats = append(stats, stat)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %w", err)
+		return nil, fmt.Errorf("error iterating platform rows: %w", err)
 	}
 
 	return stats, nil

@@ -44,9 +44,9 @@ type PaginatedDevices struct {
 }
 type DeviceCarrierStats struct {
 	DeviceCarrier string `json:"device_carrier"`
+	Platform      string `json:"platform"`
 	DeviceCount   uint64 `json:"device_count"`
 }
-
 type CarrierStatsResponse struct {
 	Stats *[]CarrierStat `json:"stats"`
 }
@@ -122,4 +122,10 @@ type SourceStatResponse struct {
 	SourceTypeID int    `json:"source_type_id"`
 	SourceName   string `json:"source_name"`
 	Count        int    `json:"count"`
+}
+
+type DCUserProfile struct {
+	UserID   uint64 `json:"user_id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }

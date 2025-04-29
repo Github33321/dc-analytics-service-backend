@@ -135,3 +135,25 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Пользователь удален"})
 }
+
+// GetDCUsers godoc
+// @Summary     Получить список пользователей ДЦ
+// @Description Возвращает список всех пользователей ДЦ (не админов панели), кто выполняет проверки.
+// @Tags        dc-users
+// @Accept      json
+// @Produce     json
+// @Success     200 {array} models.DCUserProfile
+// @Failure     500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
+// @Security    BearerAuth
+// @Router      /v1/analytics/calls/user-list [get]
+func (h *UserHandler) GetDCUsers(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	users, err := h.UserService.GetDCUsers(ctx)
+	if err != nil {
+		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}

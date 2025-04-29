@@ -10,6 +10,7 @@ type UserService interface {
 	CreateUser(ctx context.Context, req CreateUserRequest) (*models.User, error)
 	GetUsers(ctx context.Context) ([]models.User, error)
 	DeleteUser(ctx context.Context, id int64) error
+	GetDCUsers(ctx context.Context) (*[]models.DCUserProfile, error)
 }
 
 type CreateUserRequest struct {

@@ -41,10 +41,14 @@ definitions:
       user_id:
         type: integer
     type: object
-  models.DCUser2:
+  models.DCUserProfile:
     properties:
+      email:
+        type: string
       user_id:
         type: integer
+      username:
+        type: string
     type: object
   models.DedicatedDevice:
     properties:
@@ -127,6 +131,8 @@ definitions:
         type: string
       device_count:
         type: integer
+      platform:
+        type: string
     type: object
   models.DeviceGroupStats:
     properties:
@@ -380,7 +386,70 @@ paths:
       summary: LoginHandler
       tags:
       - auth
-  /v1/analytics/device-carriers/group:
+  /v1/analytics/calls/{id}/stats:
+    get:
+      consumes:
+      - application/json
+      description: 'Возвращает:'
+      parameters:
+      - description: ID устройства
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Дата в формате YYYY-MM-DD (если не указана — последние 31 день)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DeviceCallStatsResponse'
+        "400":
+          description: Неверный формат параметров
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Устройство не найдено
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetDeviceCallStats
+      tags:
+      - calls
+  /v1/analytics/calls/carriers:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает количество звонков по каждому оператору отдельно для
+        Android и iOS платформ.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DeviceCarrierStats'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Статистика по операторам устройств с разбивкой по платформам
+      tags:
+      - calls
+  /v1/analytics/calls/groups:
     get:
       description: Возвращает количество результатов по каждому group_id
       produces:
@@ -400,33 +469,8 @@ paths:
       - BearerAuth: []
       summary: GetDeviceGroupStats
       tags:
-      - stats
-  /v1/analytics/device-carriers/operator:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает для каждого оператора общее число устройств.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: device_carriers
-          schema:
-            additionalProperties:
-              items:
-                $ref: '#/definitions/models.DeviceCarrierStats'
-              type: array
-            type: object
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetDeviceCarrierStats
-      tags:
-      - stats
-  /v1/analytics/device-carriers/originating:
+      - calls
+  /v1/analytics/calls/originating-carriers:
     get:
       consumes:
       - application/json
@@ -456,13 +500,13 @@ paths:
       - BearerAuth: []
       summary: GetOriginatingCarrierStats
       tags:
-      - stats
-  /v1/analytics/device-carriers/source:
+      - calls
+  /v1/analytics/calls/sources:
     get:
       consumes:
       - application/json
-      description: Возвращает статистику количества результатов по источникам (source_type_id)
-        с подстановкой названий источников из внешнего API.
+      description: Возвращает статистику количества результатов по источникам с подстановкой
+        названий источников из внешнего API.
       produces:
       - application/json
       responses:
@@ -484,7 +528,106 @@ paths:
       - BearerAuth: []
       summary: GetSourcesStats
       tags:
-      - stats
+      - calls
+  /v1/analytics/calls/stats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает статистику звонков, сгруппированную по датам.
+      parameters:
+      - description: Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются
+          данные по всем датам.
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.TaskStat'
+            type: array
+        "400":
+          description: Неверный формат параметра date
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: StatusInternalServerError
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetTaskStats
+      tags:
+      - calls
+  /v1/analytics/calls/user-list:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех пользователей ДЦ (не админов панели), кто
+        выполняет проверки.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DCUserProfile'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить список пользователей ДЦ
+      tags:
+      - dc-users
+  /v1/analytics/calls/users:
+    get:
+      description: Возвращает всех user и число их проверенных номеров
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DCUser'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetCountedUsers
+      tags:
+      - calls
+  /v1/analytics/calls/users-today:
+    get:
+      description: Для каждого user и group выдаёт сколько раз их проверили сегодня
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserGroupStats'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetTodayStats
+      tags:
+      - calls
   /v1/analytics/devices:
     get:
       consumes:
@@ -627,45 +770,6 @@ paths:
       summary: UpdateDevice
       tags:
       - devices
-  /v1/analytics/devices/{id}/call-stats:
-    get:
-      consumes:
-      - application/json
-      description: 'Возвращает:'
-      parameters:
-      - description: ID устройства
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Дата в формате YYYY-MM-DD (если не указана — последние 31 день)
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.DeviceCallStatsResponse'
-        "400":
-          description: Неверный формат параметров
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "404":
-          description: Устройство не найдено
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetDeviceCallStats
-      tags:
-      - stats
   /v1/analytics/devices/{id}/screenshots:
     get:
       consumes:
@@ -709,6 +813,37 @@ paths:
       summary: GetDeviceScreenshots
       tags:
       - devices
+  /v1/analytics/devices/dedicated/users:
+    get:
+      description: Возвращает все записи по user_id
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.DedicatedDevice'
+            type: array
+        "400":
+          description: Неверный формат user_id
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GetByUserID
+      tags:
+      - tasks
   /v1/analytics/devices/stats:
     get:
       consumes:
@@ -813,7 +948,7 @@ paths:
       summary: GetServerByID
       tags:
       - servers
-    put:
+    patch:
       consumes:
       - application/json
       description: Обновляет запись сервера с заданным ID. Передается JSON с полями
@@ -897,38 +1032,7 @@ paths:
       summary: GetDevicesByServerID
       tags:
       - servers
-  /v1/analytics/tasks/{id}/devices:
-    get:
-      description: Возвращает все записи по user_id
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.DedicatedDevice'
-            type: array
-        "400":
-          description: Неверный формат user_id
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetByUserID
-      tags:
-      - tasks
-  /v1/analytics/tasks/group:
+  /v1/analytics/tasks/ready:
     get:
       description: Возвращает количество записей с group_id 1 и 2
       produces:
@@ -947,109 +1051,6 @@ paths:
       security:
       - BearerAuth: []
       summary: GetTasksReadyCounts
-      tags:
-      - tasks
-  /v1/analytics/tasks/stats:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает статистику звонков, сгруппированную по датам.
-      parameters:
-      - description: Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются
-          данные по всем датам.
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.TaskStat'
-            type: array
-        "400":
-          description: Неверный формат параметра date
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "500":
-          description: StatusInternalServerError
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetTaskStats
-      tags:
-      - tasks
-  /v1/analytics/tasks/user-list:
-    get:
-      consumes:
-      - application/json
-      description: Возвращает список всех users
-      parameters:
-      - description: Дата в формате YYYY-MM-DD
-        in: query
-        name: date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.DCUser2'
-            type: array
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetDistinctUsers
-      tags:
-      - tasks
-  /v1/analytics/tasks/users:
-    get:
-      description: Возвращает всех user и число их проверенных номеров
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.DCUser'
-            type: array
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetCountedUsers
-      tags:
-      - tasks
-  /v1/analytics/tasks/users-today:
-    get:
-      description: Для каждого user и group выдаёт сколько раз их проверили сегодня
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.UserGroupStats'
-            type: array
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: GetTodayStats
       tags:
       - tasks
   /v1/analytics/users:

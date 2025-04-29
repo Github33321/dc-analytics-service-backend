@@ -21,8 +21,6 @@ type DeviceStatsService interface {
 	GetDeviceCarrierStats(ctx context.Context) ([]*models.DeviceCarrierStats, error)
 	GetOriginatingCarrierStats(ctx context.Context, fromDate string) (*models.CarrierStatsResponse, error)
 	GetDeviceGroupStats(ctx context.Context) (*[]models.DeviceGroupStats, error)
-	// Имитация ответа от внешнего API
-	//GetSources(ctx context.Context) ([]*models.Source, error)
 	GetTasksReadyCounts(ctx context.Context) (*[]models.TasksReadyCount, error)
 	GetByUserID(ctx context.Context, userID uint64) (*[]models.DedicatedDevice, error)
 	GetCountedUsers(ctx context.Context) (*[]models.DCUser, error)
@@ -31,9 +29,6 @@ type DeviceStatsService interface {
 	GetSourcesStats(ctx context.Context) (*[]models.SourceStatResponse, error)
 }
 
-//	type deviceStatsService struct {
-//		repo repository.DeviceStatsRepository
-//	}
 type deviceStatsService struct {
 	repo   repository.DeviceStatsRepository
 	config *config.Config
@@ -45,10 +40,6 @@ func NewDeviceStatsService(repo repository.DeviceStatsRepository, cfg *config.Co
 		config: cfg,
 	}
 }
-
-//func NewDeviceStatsService(repo repository.DeviceStatsRepository) DeviceStatsService {
-//	return &deviceStatsService{repo: repo}
-//}
 
 func (s *deviceStatsService) GetDeviceCallStats(ctx context.Context, deviceID, date string) (*models.DeviceCallStatsResponse, error) {
 	return s.repo.GetDeviceCallStats(ctx, deviceID, date)
@@ -77,19 +68,6 @@ func (s *deviceStatsService) GetOriginatingCarrierStats(ctx context.Context, fro
 func (s *deviceStatsService) GetDeviceGroupStats(ctx context.Context) (*[]models.DeviceGroupStats, error) {
 	return s.repo.GetDeviceGroupStats(ctx)
 }
-
-// Имитация ответа от внешнего API
-//func (s *deviceStatsService) GetSources(ctx context.Context) ([]*models.Source, error) {
-//	return []*models.Source{
-//		{ID: 1, Name: "daily-platform", CreatedAt: "2024-12-26 10:09:05", UpdatedAt: "2024-12-26 10:09:05"},
-//		{ID: 2, Name: "demand-platform", CreatedAt: "2024-12-26 10:09:05", UpdatedAt: "2024-12-26 10:09:05"},
-//		{ID: 3, Name: "partner-platform", CreatedAt: "2024-12-26 10:09:05", UpdatedAt: "2024-12-26 10:09:05"},
-//		{ID: 4, Name: "admin-platform", CreatedAt: "2024-12-26 10:09:05", UpdatedAt: "2024-12-26 10:09:05"},
-//		{ID: 5, Name: "user-api", CreatedAt: "2024-12-26 10:09:05", UpdatedAt: "2024-12-26 10:09:05"},
-//		{ID: 6, Name: "daily-hiya-platform", CreatedAt: "2025-01-20 13:35:01", UpdatedAt: "2025-01-28 09:07:23"},
-//		{ID: 7, Name: "daily-pixel-platform", CreatedAt: "2025-04-08 10:08:32", UpdatedAt: "2025-04-08 10:08:32"},
-//	}, nil
-//}
 
 func (s *deviceStatsService) GetTasksReadyCounts(ctx context.Context) (*[]models.TasksReadyCount, error) {
 	return s.repo.GetTasksReadyCounts(ctx)

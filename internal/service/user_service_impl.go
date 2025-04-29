@@ -36,3 +36,7 @@ func (s *userService) GetUsers(ctx context.Context) ([]models.User, error) {
 func (s *userService) DeleteUser(ctx context.Context, id int64) error {
 	return s.userRepo.DeleteUser(ctx, id)
 }
+
+func (s *userService) GetDCUsers(ctx context.Context) (*[]models.DCUserProfile, error) {
+	return s.userRepo.GetDCUsers(ctx)
+}

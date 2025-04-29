@@ -27,7 +27,7 @@ func NewDeviceStatsHandler(logger *zap.Logger, s service.DeviceStatsService) *De
 //   - calls_by_day: разбивку по последним 31 дню (или по конкретной дате)
 //   - status_counts: количество звонков по статусам за сегодня
 //
-// @Tags        stats
+// @Tags        calls
 // @Accept      json
 // @Produce     json
 // @Param       id    path     string true  "ID устройства"
@@ -37,7 +37,7 @@ func NewDeviceStatsHandler(logger *zap.Logger, s service.DeviceStatsService) *De
 // @Failure     404   {object} models.ErrorResponse "Устройство не найдено"
 // @Failure     500   {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/devices/{id}/call-stats [get]
+// @Router      /v1/analytics/calls/{id}/stats [get]
 func (h *DeviceStatsHandler) GetDeviceCallStats(c *gin.Context) {
 	deviceID := c.Param("id")
 	date := c.DefaultQuery("date", "")
@@ -78,7 +78,7 @@ func (h *DeviceStatsHandler) GetDeviceCallStats(c *gin.Context) {
 // GetTaskStats godoc
 // @Summary      GetTaskStats
 // @Description  Возвращает статистику звонков, сгруппированную по датам.
-// @Tags         tasks
+// @Tags         calls
 // @Accept       json
 // @Produce      json
 // @Param        date  query     string  false  "Дата для фильтрации (YYYY-MM-DD). Если не указан, возвращаются данные по всем датам."
@@ -86,7 +86,7 @@ func (h *DeviceStatsHandler) GetDeviceCallStats(c *gin.Context) {
 // @Failure      400   {object}  models.ErrorResponse  "Неверный формат параметра date"
 // @Failure      500   {object}  models.ErrorResponse  "StatusInternalServerError"
 // @Security     BearerAuth
-// @Router       /v1/analytics/tasks/stats [get]
+// @Router       /v1/analytics/calls/stats [get]
 func (h *DeviceStatsHandler) GetTaskStats(c *gin.Context) {
 	ctx := c.Request.Context()
 	date := c.Query("date")
@@ -151,15 +151,15 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 }
 
 // GetDeviceCarrierStats godoc
-// @Summary     GetDeviceCarrierStats
-// @Description Возвращает для каждого оператора общее число устройств.
-// @Tags        stats
+// @Summary     Статистика по операторам устройств с разбивкой по платформам
+// @Description Возвращает количество звонков по каждому оператору отдельно для Android и iOS платформ.
+// @Tags        calls
 // @Accept      json
 // @Produce     json
-// @Success     200 {object} map[string][]models.DeviceCarrierStats "device_carriers"
-// @Failure     500 {object} models.ErrorResponse            "Внутренняя ошибка сервера"
+// @Success     200 {array} models.DeviceCarrierStats
+// @Failure     500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/device-carriers/operator [get]
+// @Router      /v1/analytics/calls/carriers [get]
 func (h *DeviceStatsHandler) GetDeviceCarrierStats(c *gin.Context) {
 	stats, err := h.statsService.GetDeviceCarrierStats(c.Request.Context())
 	if err != nil {
@@ -167,13 +167,13 @@ func (h *DeviceStatsHandler) GetDeviceCarrierStats(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"device_carriers": stats})
+	c.JSON(http.StatusOK, stats)
 }
 
 // GetOriginatingCarrierStats godoc
 // @Summary GetOriginatingCarrierStats
 // @Description Получает статистику проверок по операторам за выбранный период (если дата не указана, возвращает данные за сегодня).
-// @Tags stats
+// @Tags calls
 // @Accept json
 // @Produce json
 // @Param fromDate query string false "Дата начала периода (формат YYYY-MM-DD, по умолчанию — сегодня)"
@@ -181,7 +181,7 @@ func (h *DeviceStatsHandler) GetDeviceCarrierStats(c *gin.Context) {
 // @Failure 400 {object} models.ErrorResponse "Некорректный запрос"
 // @Failure 500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security BearerAuth
-// @Router /v1/analytics/device-carriers/originating [get]
+// @Router /v1/analytics/calls/originating-carriers [get]
 func (h *DeviceStatsHandler) GetOriginatingCarrierStats(c *gin.Context) {
 	fromDate := c.Query("fromDate")
 	if fromDate == "" {
@@ -200,12 +200,12 @@ func (h *DeviceStatsHandler) GetOriginatingCarrierStats(c *gin.Context) {
 // GetDeviceGroupStats godoc
 // @Summary     GetDeviceGroupStats
 // @Description Возвращает количество результатов по каждому group_id
-// @Tags        stats
+// @Tags        calls
 // @Produce     json
 // @Success     200 {array} models.DeviceGroupStats
 // @Failure     500 {object} models.ErrorResponse
 // @Security    BearerAuth
-// @Router      /v1/analytics/device-carriers/group [get]
+// @Router      /v1/analytics/calls/groups [get]
 func (h *DeviceStatsHandler) GetDeviceGroupStats(c *gin.Context) {
 	stats, err := h.statsService.GetDeviceGroupStats(c.Request.Context())
 	if err != nil {
@@ -241,7 +241,7 @@ func (h *DeviceStatsHandler) GetDeviceGroupStats(c *gin.Context) {
 // @Success     200 {array} models.TasksReadyCount
 // @Failure     500 {object} models.ErrorResponse
 // @Security    BearerAuth
-// @Router      /v1/analytics/tasks/group [get]
+// @Router      /v1/analytics/tasks/ready [get]
 func (h *DeviceStatsHandler) GetTasksReadyCounts(c *gin.Context) {
 	stats, err := h.statsService.GetTasksReadyCounts(c.Request.Context())
 	if err != nil {
@@ -261,7 +261,7 @@ func (h *DeviceStatsHandler) GetTasksReadyCounts(c *gin.Context) {
 // @Failure     400  {object}  models.ErrorResponse "Неверный формат user_id"
 // @Failure     500  {object}  models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/tasks/{id}/devices [get]
+// @Router      /v1/analytics/devices/dedicated/users [get]
 func (h *DeviceStatsHandler) GetByUserID(c *gin.Context) {
 	idStr := c.Param("id")
 	uid, err := strconv.ParseUint(idStr, 10, 64)
@@ -281,12 +281,12 @@ func (h *DeviceStatsHandler) GetByUserID(c *gin.Context) {
 // GetCountedUsers godoc
 // @Summary     GetCountedUsers
 // @Description Возвращает всех user и число их проверенных номеров
-// @Tags        tasks
+// @Tags        calls
 // @Produce     json
 // @Success     200 {array} models.DCUser
 // @Failure     500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/tasks/users [get]
+// @Router      /v1/analytics/calls/users [get]
 func (h *DeviceStatsHandler) GetCountedUsers(c *gin.Context) {
 	list, err := h.statsService.GetCountedUsers(c.Request.Context())
 	if err != nil {
@@ -299,12 +299,12 @@ func (h *DeviceStatsHandler) GetCountedUsers(c *gin.Context) {
 // GetTodayStats godoc
 // @Summary     GetTodayStats
 // @Description Для каждого user и group выдаёт сколько раз их проверили сегодня
-// @Tags        tasks
+// @Tags        calls
 // @Produce     json
 // @Success     200 {array} models.UserGroupStats
 // @Failure     500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/tasks/users-today [get]
+// @Router      /v1/analytics/calls/users-today [get]
 func (h *DeviceStatsHandler) GetTodayStats(c *gin.Context) {
 	stats, err := h.statsService.TodayStats(c.Request.Context())
 	if err != nil {
@@ -320,35 +320,35 @@ func (h *DeviceStatsHandler) GetTodayStats(c *gin.Context) {
 //
 //	Если передан query-параметр date=YYYY-MM-DD — только за эту дату.
 //
-// @Tags        tasks
+// @Tags        calls
 // @Accept      json
 // @Produce     json
 // @Param       date  query    string false "Дата в формате YYYY-MM-DD"
 // @Success     200   {array}   models.DCUser2
 // @Failure     500   {object}  models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/tasks/user-list [get]
-func (h *DeviceStatsHandler) GetDistinctUsers(c *gin.Context) {
-	date := c.Query("date")
-	users, err := h.statsService.GetDistinctUsers(c.Request.Context(), date)
-	if err != nil {
-		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
-		return
-	}
-	c.JSON(http.StatusOK, users)
-}
+// @Router      /v1/analytics/calls/user-list [get]
+//func (h *DeviceStatsHandler) GetDistinctUsers(c *gin.Context) {
+//	date := c.Query("date")
+//	users, err := h.statsService.GetDistinctUsers(c.Request.Context(), date)
+//	if err != nil {
+//		handleClientError(c, h.Logger, http.StatusInternalServerError, "StatusInternalServerError", err)
+//		return
+//	}
+//	c.JSON(http.StatusOK, users)
+//}
 
 // GetSourcesStats godoc
 // @Summary     GetSourcesStats
 // @Description Возвращает статистику количества результатов по источникам с подстановкой названий источников из внешнего API.
-// @Tags        stats
+// @Tags        calls
 // @Accept      json
 // @Produce     json
 // @Success     200 {array} models.SourceStatResponse
 // @Failure     400 {object} models.ErrorResponse "Неверный формат запроса"
 // @Failure     500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/device-carriers/source [get]
+// @Router      /v1/analytics/calls/sources [get]
 func (h *DeviceStatsHandler) GetSourcesStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
