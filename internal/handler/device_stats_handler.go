@@ -151,7 +151,7 @@ func (h *DeviceStatsHandler) GetDeviceScreenshots(c *gin.Context) {
 }
 
 // GetDeviceCarrierStats godoc
-// @Summary     Статистика по операторам устройств с разбивкой по платформам
+// @Summary     GetDeviceCarrierStats
 // @Description Возвращает количество звонков по каждому оператору отдельно для Android и iOS платформ.
 // @Tags        calls
 // @Accept      json
@@ -261,7 +261,7 @@ func (h *DeviceStatsHandler) GetTasksReadyCounts(c *gin.Context) {
 // @Failure     400  {object}  models.ErrorResponse "Неверный формат user_id"
 // @Failure     500  {object}  models.ErrorResponse "Внутренняя ошибка сервера"
 // @Security    BearerAuth
-// @Router      /v1/analytics/devices/dedicated/users [get]
+// @Router      /v1/analytics/devices/dedicated/users/{id} [get]
 func (h *DeviceStatsHandler) GetByUserID(c *gin.Context) {
 	idStr := c.Param("id")
 	uid, err := strconv.ParseUint(idStr, 10, 64)

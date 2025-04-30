@@ -56,8 +56,6 @@ func (h *Handler) InitRoutes(router *gin.Engine, deviceRepo repository.DeviceRep
 	secure := router.Group("/v1/analytics")
 	secure.Use(middleware.JWTMiddleware(h.JWTSecret))
 	{
-		//time curl -X GET "http://localhost:7002/v1/analytics/calls/1005/stats" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmcm9udGVuZC11c2VyIiwiZXhwIjoxNzQ1OTA3MjU1LCJpYXQiOjE3NDU4MjA4NTV9.OikQPvJXQUdDGfvLFjhb34_D2qkJPLR00FaxF6yV9m0" -H "Accept: application/json"
-		//curl -X GET 'https://ms1.calleridreputation.com/v1/sources/list' -H "X-Auth-Key: 4f9c5e8f-2c8b-4f7d-91d8-1a2b3c4d5e6f"
 		secure.GET("/ping", PingHandler)
 
 		secure.GET("/users/:id", h.UserHandler.GetUserByID)
@@ -83,11 +81,10 @@ func (h *Handler) InitRoutes(router *gin.Engine, deviceRepo repository.DeviceRep
 		secure.GET("/calls/originating-carriers", h.DeviceStatsHandler.GetOriginatingCarrierStats)
 		secure.GET("/calls/groups", h.DeviceStatsHandler.GetDeviceGroupStats)
 		secure.GET("/calls/sources", h.DeviceStatsHandler.GetSourcesStats)
-		secure.GET("/devices/dedicated/users", h.DeviceStatsHandler.GetByUserID)
+		secure.GET("/devices/dedicated/users/:id", h.DeviceStatsHandler.GetByUserID)
 		secure.GET("/calls/users", h.DeviceStatsHandler.GetCountedUsers)
 		secure.GET("/calls/users-today", h.DeviceStatsHandler.GetTodayStats)
 		secure.GET("/calls/user-list", h.UserHandler.GetDCUsers)
-
 		secure.GET("/tasks/ready", h.DeviceStatsHandler.GetTasksReadyCounts)
 	}
 }

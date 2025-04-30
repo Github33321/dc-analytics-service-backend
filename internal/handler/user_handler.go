@@ -137,9 +137,9 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 }
 
 // GetDCUsers godoc
-// @Summary     Получить список пользователей ДЦ
-// @Description Возвращает список всех пользователей ДЦ (не админов панели), кто выполняет проверки.
-// @Tags        dc-users
+// @Summary     GetDCUsers
+// @Description Возвращает список всех пользователей.
+// @Tags        calls
 // @Accept      json
 // @Produce     json
 // @Success     200 {array} models.DCUserProfile

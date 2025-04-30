@@ -85,7 +85,7 @@ const docTemplate = `{
                 "tags": [
                     "calls"
                 ],
-                "summary": "Статистика по операторам устройств с разбивкой по платформам",
+                "summary": "GetDeviceCarrierStats",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -288,7 +288,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает список всех пользователей ДЦ (не админов панели), кто выполняет проверки.",
+                "description": "Возвращает список всех пользователей.",
                 "consumes": [
                     "application/json"
                 ],
@@ -296,9 +296,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "dc-users"
+                    "calls"
                 ],
-                "summary": "Получить список пользователей ДЦ",
+                "summary": "GetDCUsers",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -503,7 +503,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/analytics/devices/dedicated/users": {
+        "/v1/analytics/devices/dedicated/users/{id}": {
             "get": {
                 "security": [
                     {

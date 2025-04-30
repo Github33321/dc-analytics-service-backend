@@ -3025,10 +3025,10 @@ SET server_image_url = CASE
     END
 WHERE server_image_url = 'unknown';
 
-CREATE TABLE users_dc (
-                          user_id BIGINT PRIMARY KEY,
-                          username VARCHAR(255) NOT NULL,
-                          email VARCHAR(255) NOT NULL
+CREATE TABLE IF NOT EXISTS users_dc (
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL
 );
 
 INSERT INTO users_dc (user_id, username, email) VALUES

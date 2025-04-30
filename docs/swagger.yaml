@@ -446,7 +446,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Статистика по операторам устройств с разбивкой по платформам
+      summary: GetDeviceCarrierStats
       tags:
       - calls
   /v1/analytics/calls/groups:
@@ -566,8 +566,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Возвращает список всех пользователей ДЦ (не админов панели), кто
-        выполняет проверки.
+      description: Возвращает список всех пользователей.
       produces:
       - application/json
       responses:
@@ -583,9 +582,9 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получить список пользователей ДЦ
+      summary: GetDCUsers
       tags:
-      - dc-users
+      - calls
   /v1/analytics/calls/users:
     get:
       description: Возвращает всех user и число их проверенных номеров
@@ -813,7 +812,7 @@ paths:
       summary: GetDeviceScreenshots
       tags:
       - devices
-  /v1/analytics/devices/dedicated/users:
+  /v1/analytics/devices/dedicated/users/{id}:
     get:
       description: Возвращает все записи по user_id
       parameters:
